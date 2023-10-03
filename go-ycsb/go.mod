@@ -5,7 +5,7 @@ require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2
 	github.com/XiaoMi/pegasus-go-client v0.0.0-20181029071519-9400942c5d1c
 	github.com/aerospike/aerospike-client-go v1.35.2
-	github.com/apple/foundationdb/bindings/go v0.0.0-20200112054404-407dc0907f4f
+	github.com/apple/foundationdb/bindings/go v0.0.0-20231002165456-aadfd8f22e80
 	github.com/boltdb/bolt v1.3.1
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
