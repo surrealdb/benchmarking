@@ -16,4 +16,28 @@ Platform to run and keep the history of benchmark runs.
 
 ## More Info
 
-More information about the project can be found on the [Github Wiki](https://github.com/supabase/supabench/wiki)
+This directory is a clone of https://github.com/supabase/supabench with customisations specific to SurrealDB
+
+The components are:
+* Supabench instance: it persists the benchmark definitions and executes the benchmarks
+* Benchmark definition: it has a ZIP file and a JSON with vars. The ZIP contains Terraform and K6 code. The vars are passed to the Terraform command.
+* Infrastructure: the Terraform code creates the EC2 instances, uploads the K6 code and runs it.
+* Grafana Cloud: the K6 metrics are pushed to Grafana Cloud (https://surrealdb.grafana.net)
+
+How to run it?
+* Start the Supabench instance somewhere accessible by the EC2 instances:
+```
+$ docker-compose up -d
+```
+* Access the Admin panel and create the necessary resources. Check https://github.com/supabase/benchmarks/wiki for a step-by-step guide. Most of it still works the same way
+```
+$ open http://<supabench-ip>:8090/_/
+```
+* Once the benchmarks are defined, access the Supabase UI and launch a new run:
+```
+$ open http://<supabench-ip>:8090/#/
+```
+* Check the Grafana K6 Dashboard to monitor the test:
+```
+$ open https://surrealdb.grafana.net/d/01npcT44k/official-k6-test-result
+```
