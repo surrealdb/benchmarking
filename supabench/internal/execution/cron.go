@@ -69,7 +69,13 @@ func (app *App) runBenchmarks() {
 		Msg("running benchmark")
 
 	run.Status = "running"
-	if err := app.PB.DB().Model(&run).Update("Status"); err != nil {
+	run.StartedAt = func() *string {
+		now := time.Now().UTC().UnixMilli()
+		startedAt := fmt.Sprintf("%d", now)
+		return &startedAt
+	}()
+
+	if err := app.PB.DB().Model(&run).Update("Status", "StartedAt"); err != nil {
 		log.Error().Err(err).Msg("error updating run status")
 		return
 	}
@@ -77,17 +83,36 @@ func (app *App) runBenchmarks() {
 	if err := app.runBenchmark(&run); err != nil {
 		log.Error().Err(err).Msg("error running benchmark")
 		run.Status = "fail"
-		if err := app.PB.DB().Model(&run).Update("Status"); err != nil {
+		run.EndedAt = func() *string {
+			now := time.Now().UTC().UnixMilli()
+			endedAt := fmt.Sprintf("%d", now)
+			return &endedAt
+		}()
+		if err := app.PB.DB().Model(&run).Update("Status", "EndedAt"); err != nil {
 			log.Error().Err(err).Msg("error updating run status to failed")
 		}
 		return
 	}
 
 	run.Status = "success"
-	if err := app.PB.DB().Model(&run).Update("Status"); err != nil {
+	run.EndedAt = func() *string {
+		now := time.Now().UTC().UnixMilli()
+		endedAt := fmt.Sprintf("%d", now)
+		return &endedAt
+	}()
+
+	if err := app.PB.DB().Model(&run).Update("Status", "EndedAt"); err != nil {
 		log.Error().Err(err).Msg("error updating run status to success")
 		return
 	}
+
+	log.Debug().
+		Str("benchmark_id", run.BenchmarkID).
+		Str("run_id", run.Id).
+		Str("name", run.Name).
+		Str("startedAt", *run.StartedAt).
+		Str("endedAt", *run.EndedAt).
+		Msg("benchmark finished")
 }
 
 func (app *App) teardownBenchmarks() {

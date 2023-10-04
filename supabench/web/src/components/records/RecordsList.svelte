@@ -245,13 +245,13 @@
                     <td class="col-type-text col-field-grafana_url">
                       <a
                           class="txt-ellipsis"
-                          href={project.grafana_url + `&from=${record.started_at}&to=${record.ended_at}&var-testrun=${record.name}`}
+                          href={project.grafana_url + `&from=${record.started_at}&to=${record.ended_at}&var-testid=${record.id}`}
                           target="_blank"
                           rel="noopener"
                           use:tooltip={"Open in new tab"}
                           on:click|stopPropagation
                       >
-                          {project.grafana_url + `&from=${record.started_at}&to=${record.ended_at}&var-testrun=${record.name}`}
+                          {project.grafana_url + `&from=${record.started_at}&to=${record.ended_at}&var-testid=${record.id}`}
                       </a>
                     </td>
 

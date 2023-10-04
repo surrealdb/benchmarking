@@ -1,7 +1,9 @@
-FROM flyio/flyctl:latest as flyio
 FROM golang:buster as builder
 
 WORKDIR /builder
+
+COPY ./go.mod ./go.sum ./
+RUN go mod download
 
 ADD . .
 
@@ -11,7 +13,6 @@ RUN go build -o server
 # release image
 FROM gcr.io/google-appengine/debian10
 
-COPY --from=flyio /flyctl /
 COPY --from=builder /builder/server /
 
 WORKDIR /

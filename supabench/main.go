@@ -21,7 +21,7 @@ func main() {
 	viper.SetEnvPrefix("SUPABENCH")
 	viper.AutomaticEnv()
 
-	log.Logger = log.Level(zerolog.InfoLevel)
+	log.Logger = log.Level(zerolog.DebugLevel)
 
 	installer := &releases.ExactVersion{
 		Product: product.Terraform,
