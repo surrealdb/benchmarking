@@ -42,5 +42,3 @@ requestdistribution=uniform
 maxscanlength=1
 
 scanlengthdistribution=uniform
-
-
