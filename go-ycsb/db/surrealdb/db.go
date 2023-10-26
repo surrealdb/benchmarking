@@ -59,7 +59,7 @@ func createDB(p *properties.Properties) (ycsb.DB, error) {
 
 func (s *surrealDB) connect() (*surrealdb.DB, error) {
 	// Create client connection
-	db, err := surrealdb.New(s.dbUri, surrealdb.WithTimeout(5*time.Second))
+	db, err := surrealdb.New(s.dbUri, surrealdb.WithTimeout(30*time.Second))
 	if err != nil {
 		return nil, err
 	}

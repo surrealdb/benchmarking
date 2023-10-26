@@ -7,10 +7,11 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/pingcap/go-ycsb/pkg/prop"
 	"io/ioutil"
 	"log"
 	"strings"
+
+	"github.com/pingcap/go-ycsb/pkg/prop"
 
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
