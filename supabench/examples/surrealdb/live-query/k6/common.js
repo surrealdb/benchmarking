@@ -28,7 +28,7 @@ export function getRandomInt(min, max) {
 export function scenario(baseDuration, conns) {
   return {
     executor: 'ramping-vus',
-    startVUs: 0,
+    startVUs: 1,
     stages: [
       {
         duration: `${parseInt(baseDuration) / 2}s`,

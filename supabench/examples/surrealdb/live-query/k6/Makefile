@@ -23,4 +23,4 @@ load:
 		K6_PROMETHEUS_RW_USERNAME=$(prom_user) K6_PROMETHEUS_RW_PASSWORD=$(prom_pass) \
 		K6_PROMETHEUS_RW_TREND_STATS='count,sum,min,max,avg,med,p(95),p(99)' \
 		K6_PROMETHEUS_RW_PUSH_INTERVAL=5s \
-		k6 run load.js --tag testrun=$(testrun) --tag instance_id=$(instance_id) --tag testid=$(testid) -o experimental-prometheus-rw
+		k6 run load.js --tag testrun=$(testrun) --tag instance_id=$(instance_id) --tag testid=$(testid) -o experimental-prometheus-rw --verbose
