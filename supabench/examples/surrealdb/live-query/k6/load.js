@@ -71,21 +71,6 @@ function signin(ws) {
             console.log(`Websocket closed: ${e}`)
         })
 
-        // And response listener
-        ws.addEventListener('message', (e) => {
-            const msg = JSON.parse(e.data)
-            if (msg.id === request_id) {
-                if (!check(msg, {
-                    'signin must not be an error': m => m.error === null
-                })) {
-                    fail(`signin response had an error: ${msg}`)
-                } else {
-                    console.log(`Successful signin: ${msg}`)
-                }
-            }
-            console.log(`received message: ${msg}`)
-        })
-
         // Now send message we expect response for
         console.log("Sending signin request message")
         ws.send(JSON.stringify({
@@ -180,13 +165,21 @@ export default function(setup) {
         const period_query = "CREATE table CONTENT {'name': 'some name'}"
         console.log(`Creating poller for writes`)
         const write_interval = setInterval(() => {
-            console.log(`Writing query`)
-            write_query(ws, period_query)
+            // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
+            const OPEN = 1
+            if (ws.readyState == OPEN) {
+                console.log(`Writing query`)
+                write_query(ws, period_query)
+            } else {
+                const t = typeof ws.readyState
+                console.log(`Not writing query because WS not open: (${t}) ${ws.readyState}`)
+            }
         }, period_write_ms)
         const write_timeout_ms = 10000;
         setTimeout(() => {
-            console.log(`Removing write poller`)
+            console.log(`Removing write poller and closing connection`)
             clearInterval(write_interval)
+            ws.close()
         }, write_timeout_ms)
 
         // Kill Live Query
