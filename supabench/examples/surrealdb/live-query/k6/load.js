@@ -3,7 +3,7 @@ import http from 'k6/http'
 import { check, fail } from 'k6';
 // import ws from 'k6/ws';
 import { WebSocket } from 'k6/experimental/websockets';
-import { setInterval, setTimeout } from 'k6/experimental/timers';
+import { setInterval, setTimeout, clearInterval } from 'k6/experimental/timers';
 
 // you can use some common things for k6
 // 'scenario' provides you the load scenario with ramping-vus executor and 2 periods of const load
