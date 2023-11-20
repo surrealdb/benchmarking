@@ -54,6 +54,18 @@ export function setup() {
     return {
         base_url: base_url,
         query: query,
+        // State describes the stage of the protocol
+        state: {
+            // stages:
+            // 0 - not signed in
+            // 1 - signed in
+            // 2 - "use"d
+            // 3 - live query complete
+            // 4 - unnecessary, we only need LQ, then everything can be run in parallel?
+            stage: 0,
+            // populated at stage 3
+            live_id : null,
+        },
         tags: {
             base_url: base_url,
             query: query,
@@ -62,35 +74,37 @@ export function setup() {
 }
 
 function signin(ws) {
-    ws.addEventListener("open", () => {
-        console.log("WS opened connection event")
-        const request_id = "signin_request_id";
+    console.log("WS opened connection event")
+    const request_id = "signin_request_id";
 
-        // Set up listener before things can break
-        ws.addEventListener('close', (e) => {
-            console.log(`Websocket closed: ${e}`)
-        })
-
-        // Now send message we expect response for
-        console.log("Sending signin request message")
-        ws.send(JSON.stringify({
-            id: request_id,
-            method: "signin",
-            params: [ {
-                user: username,
-                pass: password,
-                ns: ns,
-                db: db,
-                // sc: null,
-            }],
-        }))
-
-        console.log("Sending bogus request message")
-        ws.send(JSON.stringify({id: "other_id", method:"query", params: ["blaa"]}))
-
+    // Set up listener before things can break
+    ws.addEventListener('close', (e) => {
+        console.log(`Websocket closed: ${e}`)
     })
-    console.log("Sending bogus request message outside open hook")
-    ws.send(JSON.stringify({id: "other_id", method:"query", params: ["blaa"]}))
+
+    // Now send message we expect response for
+    console.log("Sending signin request message")
+    ws.send(JSON.stringify({
+        id: request_id,
+        method: "signin",
+        params: [ {
+            user: username,
+            pass: password,
+            ns: ns,
+            db: db,
+            // sc: null,
+        }],
+    }))
+
+    console.log(`Sending use for ns=${ns}, db=${db}`)
+    const use_req_id = "use_req_id";
+    ws.send(JSON.stringify({
+        id: use_req_id,
+        method: "use",
+        params: [
+            ns, db
+        ],
+    }))
 }
 
 function create_lq(ws, query) {
@@ -105,13 +119,14 @@ function create_lq(ws, query) {
     var error = null;
     ws.addEventListener("message", (e) => {
         const msg = JSON.parse(e.data)
+        console.log(`(create_lq) received message ${e.data}`)
         if (msg.id === lq_req_id) {
             if (msg.error !== null) {
                 error = msg.error
             } else if (msg.result !== null) {
                 return_live_query_id = msg.result
             } else {
-                error = `unhandled response for a live query creation: req_id=${lq_req_id} msg=${msg}`
+                error = `unhandled response for a live query creation: req_id=${lq_req_id} msg=${e.data}`
             }
         }
     })
@@ -138,6 +153,7 @@ function write_query(ws, period_query) {
     }))
     ws.addEventListener("message", (e) => {
         const msg = JSON.parse(e.data)
+        console.log(`(write_query) received event message ${e.data}`)
         if (msg.id === write_query_id) {
             check(msg, {
                 "is not error": (m) => m.error === null,
