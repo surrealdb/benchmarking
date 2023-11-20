@@ -56,15 +56,19 @@ export function setup() {
         query: query,
         // State describes the stage of the protocol
         state: {
-            // stages:
-            // 0 - not signed in
-            // 1 - signed in
-            // 2 - "use"d
-            // 3 - live query complete
-            // 4 - unnecessary, we only need LQ, then everything can be run in parallel?
-            stage: 0,
-            // populated at stage 3
+            // stage of the state machine of this test
+            stage: STATE_STAGE_SIGNING_IN,
+            // populated during the live query stage
             live_id : null,
+            // numbers that repr intervals that need to be cleared
+            intervals_to_kill: {},
+            // numbers that repr timeouts that need to be cleared
+            timeouts_to_kill: {},
+            // map of request IDs that need answering
+            awaiting_requests: {},
+            // we want to keep track of this, so we know when state is completed
+            // it contains request ids that haven't been sent yet
+            pending_requests: [],
         },
         tags: {
             base_url: base_url,
@@ -73,134 +77,221 @@ export function setup() {
     };
 }
 
-function signin(ws) {
-    console.log("WS opened connection event")
-    const request_id = "signin_request_id";
+const STATE_STAGE_SIGNING_IN = 0;
+const STATE_STAGE_USE_SCOPE = 1;
+const STATE_STAGE_CREATING_LIVE_QUERY = 2;
+const STATE_STAGE_CREATING_DATA = 3;
+const STATE_STAGE_CLEANUP = 4;
 
-    // Set up listener before things can break
-    ws.addEventListener('close', (e) => {
-        console.log(`Websocket closed: ${e}`)
-    })
+// Used to transition between handlers without a message required from WS
+const EMPTY_MESSAGE = {data: "{}"}
 
-    // Now send message we expect response for
-    console.log("Sending signin request message")
-    ws.send(JSON.stringify({
-        id: request_id,
-        method: "signin",
-        params: [ {
-            user: username,
-            pass: password,
-            ns: ns,
-            db: db,
-            // sc: null,
-        }],
-    }))
-
-    console.log(`Sending use for ns=${ns}, db=${db}`)
-    const use_req_id = "use_req_id";
-    ws.send(JSON.stringify({
-        id: use_req_id,
-        method: "use",
-        params: [
-            ns, db
-        ],
-    }))
-}
-
-function create_lq(ws, query) {
-    const lq_req_id = "live_query_reqid_"+Math.random() * 10000
-    ws.send(JSON.stringify({
-        id: lq_req_id,
-        method: "query",
-        params: [ query ]
-    }))
-
-    var return_live_query_id = null;
-    var error = null;
-    ws.addEventListener("message", (e) => {
-        const msg = JSON.parse(e.data)
-        console.log(`(create_lq) received message ${e.data}`)
-        if (msg.id === lq_req_id) {
-            if (msg.error !== null) {
-                error = msg.error
-            } else if (msg.result !== null) {
-                return_live_query_id = msg.result
-            } else {
-                error = `unhandled response for a live query creation: req_id=${lq_req_id} msg=${e.data}`
-            }
+function createOnMessageStateHandler(ws, state) {
+    // Could be an array, but isn't for the sake of clarity
+    const state_handler_mapping= {
+        [STATE_STAGE_SIGNING_IN]: on_msg_signin_in,
+        [STATE_STAGE_USE_SCOPE]: on_msg_use_scope,
+        [STATE_STAGE_CREATING_LIVE_QUERY]: on_msg_live_query,
+        [STATE_STAGE_CREATING_DATA]: on_msg_creating_data,
+        [STATE_STAGE_CLEANUP]: on_msg_cleanup,
+    }
+    return (e) => {
+        var ret_msg = e;
+        while (ret_msg !== undefined && ret_msg !== null) {
+            // If the handler returns a value, that is the message for the next invocation
+            ret_msg = state_handler_mapping[state.stage](ws, state, ret_msg)
         }
-    })
-
-    const polling_rate_ms = 100;
-    const internal = setInterval(() => {
-        if (return_live_query_id !== null || error !==null) {
-            clearInterval(internal)
-        }
-    }, polling_rate_ms)
-
-    return {
-        lq_req_id: lq_req_id,
-        error: error,
     }
 }
 
-function write_query(ws, period_query) {
-    const write_query_id = "write_query_reqid_"+Math.random()*10000
-    ws.send(JSON.stringify({
-        id: write_query_id,
-        method: "query",
-        params: [period_query]
-    }))
-    ws.addEventListener("message", (e) => {
+function on_msg_signin_in(ws, state, e) {
+    const msg = JSON.parse(e.data)
+    const request_id = "signin_request_id";
+    if (Object.keys(msg).length === 0) {
+        console.log("Empty message, signing in")
+        ws.send(JSON.stringify({
+            id: request_id,
+            method: "signin",
+            params: [ {
+                user: username,
+                pass: password,
+                ns: ns,
+                db: db,
+                // sc: null,
+            }],
+        }))
+    } else {
+        if (check(msg, {
+            "is response to signin": (m) => m.id === request_id,
+            "is valid": (m) => m.result !== null,
+        })) {
+            console.log("Successfully signed in, changing state")
+            state.stage = STATE_STAGE_USE_SCOPE
+            return EMPTY_MESSAGE
+        } else {
+            console.log("Unsuccessful signin, failing")
+            fail(`Failed to sign in because received message ${e.data}`)
+        }
+    }
+    return null
+}
+
+function on_msg_use_scope(ws, state, e) {
+    const use_req_id = "use_req_id";
+    if (e === EMPTY_MESSAGE) {
+        console.log("Transitioned into signed in state, sending USE request")
+        ws.send(JSON.stringify({
+            id: use_req_id,
+            method: "use",
+            params: [
+                ns, db
+            ],
+        }))
+    } else {
         const msg = JSON.parse(e.data)
-        console.log(`(write_query) received event message ${e.data}`)
-        if (msg.id === write_query_id) {
+        if (check(msg, {
+            "is response to use request": (m) => m.id === use_req_id,
+            "is successful": (m) => m.result === null,
+        })) {
+            state.stage = STATE_STAGE_CREATING_LIVE_QUERY
+            console.log("Transitioned into used state")
+            return EMPTY_MESSAGE
+        } else {
+            fail(`Failed to invoke USE, msg: ${e.data}`)
+        }
+    }
+    return null
+}
+
+function on_msg_live_query(ws, state, e) {
+    const lq_req_id = "live_query_request"
+    if (e === EMPTY_MESSAGE) {
+        console.log("Sending live query request")
+        ws.send(JSON.stringify({
+            id: lq_req_id,
+            method: "query",
+            params: [ query ]
+        }))
+    } else {
+        const msg = JSON.parse(e.data)
+        if (check(msg, {
+            "is live query response": (m) => m.id === lq_req_id,
+            "has result": (m) => m.result !==null,
+            "has live query uuid": (m) => m.result[0].result !== null,
+        })) {
+            state.live_id = msg.result[0].result
+            state.stage = STATE_STAGE_CREATING_DATA
+            return EMPTY_MESSAGE
+        }
+    }
+    return null
+}
+
+function on_msg_creating_data(ws, state, e) {
+    const burst = false;
+    if (e === undefined || e === EMPTY_MESSAGE) {
+        if (burst) {
+            // TODO send all requests at once and wait for responses without intervals
+            // This is create responses and lq responses
+        } else {
+            // This is the signal to create data
+            const period_write_ms = 1000;
+            const period_query = "CREATE table CONTENT {'name': 'some name'}"
+
+            console.log(`Creating poller for writes`)
+            const write_interval = setInterval(() => {
+                console.log(`Writing query`)
+                const req_id = "write_query_reqid_"+Math.random()*10000
+                state.awaiting_requests[req_id] = true;
+                ws.send(JSON.stringify({
+                    id: req_id,
+                    method: "query",
+                    params: [period_query]
+                }))
+            }, period_write_ms)
+
+            const write_timeout_ms = 10000;
+            setTimeout(() => {
+                console.log(`Removing write poller and closing connection`)
+                delete state.intervals_to_kill[write_interval]
+                clearInterval(write_interval)
+                state.stage = STATE_STAGE_CLEANUP
+            }, write_timeout_ms)
+        }
+
+        // Kill Live Query
+        // TODO
+        console.log(`Onopen End`)
+    } else {
+        // This is where we will get live query notifications and create responses
+        console.log(`Received message during creation: ${e.data}`)
+        let msg = JSON.parse(e.data);
+        if (is_msg_notification(msg)) {
+            // Check if for us
             check(msg, {
+                "live query id matches": (m) => m.result.id === state.live_id,
+            })
+        } else {
+            if (check(msg, {
                 "is not error": (m) => m.error === null,
                 "is result": (m) => m.result !== null,
-            })
+            })) {
+                delete state.awaiting_requests[msg.id]
+            }
         }
-        // TODO handle lq response as well, by checking live query id
+    }
+}
+
+function is_msg_notification(msg) {
+    if ("result" in msg) {
+        const result = msg.result
+        if ("action" in msg) {
+            return true;
+        }
+    }
+}
+
+function is_msg_response(msg) {
+    if ("result" in msg) {
+        const result = msg.result;
+        if ("result" in result) {
+            return true
+        }
+    }
+}
+
+function on_msg_cleanup(ws, state, e) {
+    // TODO invoke kill and disconnect
+    for (const interval in state.intervals_to_kill) {
+        clearInterval(interval)
+        delete state.intervals_to_kill[interval]
+    }
+    for (const timeout in state.timeouts_to_kill) {
+        clearTimeout(timeout)
+        delete state.timeouts_to_kill[timeout]
+    }
+    // Validate end state
+    check(state, {
+        "no intervals": (st) => Object.keys(st.intervals_to_kill).length===0,
+        "no timeouts": (st) => Object.keys(st.timeouts_to_kill).length===0,
+        "no pending responses": (st) => Object.keys(st.awaiting_requests).length===0,
+        "no pending requests": (st) => Object.keys(st.pending_requests).length===0,
     })
+    ws.close()
 }
 
 export default function(setup) {
     console.log(`Creating websocket to ${base_url}`)
     const ws = new WebSocket(`${base_url}`);
     ws.onopen = () => {
-        console.log("The onopen event was triggered. Configuring")
+        console.log("WebSocket established, configuring")
 
-        console.log(`Signing in`)
-        signin(ws)
+        // Create and register state machine message handler
+        const handler = createOnMessageStateHandler(ws, setup.state)
+        ws.onmessage = handler
 
-        console.log(`Creating live query`)
-        const lq = create_lq(ws, setup.query)
-
-        // Create record
-        const period_write_ms = 1000;
-        const period_query = "CREATE table CONTENT {'name': 'some name'}"
-        console.log(`Creating poller for writes`)
-        const write_interval = setInterval(() => {
-            // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
-            const OPEN = 1
-            if (ws.readyState == OPEN) {
-                console.log(`Writing query`)
-                write_query(ws, period_query)
-            } else {
-                const t = typeof ws.readyState
-                console.log(`Not writing query because WS not open: (${t}) ${ws.readyState}`)
-            }
-        }, period_write_ms)
-        const write_timeout_ms = 10000;
-        setTimeout(() => {
-            console.log(`Removing write poller and closing connection`)
-            clearInterval(write_interval)
-            ws.close()
-        }, write_timeout_ms)
-
-        // Kill Live Query
-        // TODO
-        console.log(`Onopen End`)
+        // Invoke it immediately, because we need to fake an on-connect
+        handler({data: "{}"})
     }
 
     console.log("Setup end")
