@@ -3,6 +3,7 @@ import http from 'k6/http'
 import { check, fail } from 'k6';
 // import ws from 'k6/ws';
 import { WebSocket } from 'k6/experimental/websockets';
+import { setInterval, setTimeout } from 'k6/experimental/timers';
 
 // you can use some common things for k6
 // 'scenario' provides you the load scenario with ramping-vus executor and 2 periods of const load
@@ -86,6 +87,7 @@ function signin(ws) {
         })
 
         // Now send message we expect response for
+        console.log("Sending signin request message")
         ws.send(JSON.stringify({
             id: request_id,
             method: "signin",
@@ -94,11 +96,16 @@ function signin(ws) {
                 pass: password,
                 ns: ns,
                 db: db,
-                sc: null,
+                // sc: null,
             }],
         }))
 
+        console.log("Sending bogus request message")
+        ws.send(JSON.stringify({id: "other_id", method:"query", params: ["blaa"]}))
+
     })
+    console.log("Sending bogus request message outside open hook")
+    ws.send(JSON.stringify({id: "other_id", method:"query", params: ["blaa"]}))
 }
 
 function create_lq(ws, query) {
@@ -159,32 +166,33 @@ function write_query(ws, period_query) {
 export default function(setup) {
     console.log(`Creating websocket to ${base_url}`)
     const ws = new WebSocket(`${base_url}`);
-    ws.addEventListener('open', () => {
-        console.log("This is the immediate open event")
-    })
+    ws.onopen = () => {
+        console.log("The onopen event was triggered. Configuring")
 
-    console.log(`Signing in`)
-    signin(ws)
+        console.log(`Signing in`)
+        signin(ws)
 
-    // Create Live Query
-    console.log(`Creating live query`)
-    const lq = create_lq(ws, setup.query)
+        console.log(`Creating live query`)
+        const lq = create_lq(ws, setup.query)
 
-    // Create record
-    const period_write_ms = 1000;
-    const period_query = "CREATE table CONTENT {'name': 'some name'}"
-    console.log(`Creating poller for writes`)
-    const write_interval = setInterval(() => {
-        console.log(`Writing query`)
-        write_query(ws, period_query)
-    }, period_write_ms)
-    const write_timeout_ms = 10000;
-    setTimeout(() => {
-        console.log(`Removing write poller`)
-        clearInterval(write_interval)
-    }, write_timeout_ms)
+        // Create record
+        const period_write_ms = 1000;
+        const period_query = "CREATE table CONTENT {'name': 'some name'}"
+        console.log(`Creating poller for writes`)
+        const write_interval = setInterval(() => {
+            console.log(`Writing query`)
+            write_query(ws, period_query)
+        }, period_write_ms)
+        const write_timeout_ms = 10000;
+        setTimeout(() => {
+            console.log(`Removing write poller`)
+            clearInterval(write_interval)
+        }, write_timeout_ms)
 
-    // Kill Live Query
-    // TODO
-    console.log(`End`)
+        // Kill Live Query
+        // TODO
+        console.log(`Onopen End`)
+    }
+
+    console.log("Setup end")
 }
