@@ -109,7 +109,7 @@ function on_msg_signin_in(ws, state, e) {
     const msg = JSON.parse(e.data)
     const request_id = "signin_request_id";
     if (Object.keys(msg).length === 0) {
-        console.log("Empty message, signing in")
+        // console.log("Empty message, signing in")
         ws.send(JSON.stringify({
             id: request_id,
             method: "signin",
@@ -126,11 +126,11 @@ function on_msg_signin_in(ws, state, e) {
             "is response to signin": (m) => m.id === request_id,
             "is valid": (m) => m.result !== null,
         })) {
-            console.log("Successfully signed in, changing state")
+            // console.log("Successfully signed in, changing state")
             state.stage = STATE_STAGE_USE_SCOPE
             return EMPTY_MESSAGE
         } else {
-            console.log("Unsuccessful signin, failing")
+            // console.log("Unsuccessful signin, failing")
             fail(`Failed to sign in because received message ${e.data}`)
         }
     }
@@ -140,7 +140,7 @@ function on_msg_signin_in(ws, state, e) {
 function on_msg_use_scope(ws, state, e) {
     const use_req_id = "use_req_id";
     if (e === EMPTY_MESSAGE) {
-        console.log("Transitioned into signed in state, sending USE request")
+        // console.log("Transitioned into signed in state, sending USE request")
         ws.send(JSON.stringify({
             id: use_req_id,
             method: "use",
@@ -155,7 +155,7 @@ function on_msg_use_scope(ws, state, e) {
             "is successful": (m) => m.result === null,
         })) {
             state.stage = STATE_STAGE_CREATING_LIVE_QUERY
-            console.log("Transitioned into used state")
+            // console.log("Transitioned into used state")
             return EMPTY_MESSAGE
         } else {
             fail(`Failed to invoke USE, msg: ${e.data}`)
@@ -167,7 +167,7 @@ function on_msg_use_scope(ws, state, e) {
 function on_msg_live_query(ws, state, e) {
     const lq_req_id = "live_query_request"
     if (e === EMPTY_MESSAGE) {
-        console.log("Sending live query request")
+        // console.log("Sending live query request")
         ws.send(JSON.stringify({
             id: lq_req_id,
             method: "query",
@@ -195,7 +195,7 @@ function on_msg_creating_data(ws, state, e) {
     const period_query = "CREATE table CONTENT {'name': 'some name'}"
     if (e === undefined || e === EMPTY_MESSAGE) {
         if (burst) {
-            console.log(`Creating ${burst_number} requests`)
+            // console.log(`Creating ${burst_number} requests`)
             for (let i=0; i<burst_number; i++) {
                 const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
                 state.pending_responses[req_id] = true;
@@ -205,7 +205,7 @@ function on_msg_creating_data(ws, state, e) {
                     params: [period_query]
                 }))
             }
-            console.log(`Created ${burst_number} requests`)
+            // console.log(`Created ${burst_number} requests`)
             // Set a timeout to stop waiting for responses
             state.timeouts_to_kill[setTimeout(() => {
                 state.stage = STATE_STAGE_CLEANUP
@@ -214,9 +214,9 @@ function on_msg_creating_data(ws, state, e) {
             // This is the signal to create data
             const period_write_ms = 1000;
 
-            console.log(`Creating poller for writes`)
+            // console.log(`Creating poller for writes`)
             const write_interval = setInterval(() => {
-                console.log(`Writing query`)
+                // console.log(`Writing query`)
                 const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
                 state.pending_responses[req_id] = true;
                 ws.send(JSON.stringify({
@@ -227,7 +227,7 @@ function on_msg_creating_data(ws, state, e) {
             }, period_write_ms)
 
             setTimeout(() => {
-                console.log(`Removing write poller and closing connection`)
+                // console.log(`Removing write poller and closing connection`)
                 delete state.intervals_to_kill[write_interval]
                 clearInterval(write_interval)
             }, write_timeout_ms)
@@ -235,7 +235,7 @@ function on_msg_creating_data(ws, state, e) {
             // Wait for remaining responses to come in
             const wind_down_wait_ms = 1000;
             setTimeout(() => {
-                console.log("Finished waiting for remaining responses")
+                // console.log("Finished waiting for remaining responses")
                 state.stage = STATE_STAGE_CLEANUP
                 // Since we can't 'return' from here, we send an unnecessary request to guarantee a response
                 // and trigger the next handler
@@ -247,10 +247,6 @@ function on_msg_creating_data(ws, state, e) {
                 state.stage = STATE_STAGE_CLEANUP
             }
         }
-
-        // Kill Live Query
-        // TODO
-        console.log(`Onopen End`)
     } else {
         // This is where we will get live query notifications and create responses
         // console.log(`Received message during creation: ${e.data}`)
@@ -290,6 +286,7 @@ function is_msg_response(msg) {
 }
 
 function on_msg_cleanup(ws, state, e) {
+    // TODO Kill Live Query
     for (const interval in state.intervals_to_kill) {
         clearInterval(interval)
         delete state.intervals_to_kill[interval]
