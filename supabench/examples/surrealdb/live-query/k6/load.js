@@ -65,10 +65,10 @@ export function setup() {
             // numbers that repr timeouts that need to be cleared
             timeouts_to_kill: {},
             // map of request IDs that need answering
-            awaiting_requests: {},
+            pending_responses: {},
             // we want to keep track of this, so we know when state is completed
             // it contains request ids that haven't been sent yet
-            pending_requests: [],
+            pending_requests: {},
         },
         tags: {
             base_url: base_url,
@@ -201,8 +201,8 @@ function on_msg_creating_data(ws, state, e) {
             console.log(`Creating poller for writes`)
             const write_interval = setInterval(() => {
                 console.log(`Writing query`)
-                const req_id = "write_query_reqid_"+Math.random()*10000
-                state.awaiting_requests[req_id] = true;
+                const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
+                state.pending_requests[req_id] = true;
                 ws.send(JSON.stringify({
                     id: req_id,
                     method: "query",
@@ -215,8 +215,17 @@ function on_msg_creating_data(ws, state, e) {
                 console.log(`Removing write poller and closing connection`)
                 delete state.intervals_to_kill[write_interval]
                 clearInterval(write_interval)
-                state.stage = STATE_STAGE_CLEANUP
             }, write_timeout_ms)
+
+            // Wait for remaining responses to come in
+            const wind_down_wait_ms = 1000;
+            setTimeout(() => {
+                console.log("Finished waiting for remaining responses")
+                state.stage = STATE_STAGE_CLEANUP
+                // Since we can't 'return' from here, we send an unnecessary request to guarantee a response
+                // and trigger the next handler
+                ws.send(JSON.stringify({}))
+            }, write_timeout_ms+wind_down_wait_ms)
         }
 
         // Kill Live Query
@@ -233,10 +242,10 @@ function on_msg_creating_data(ws, state, e) {
             })
         } else {
             if (check(msg, {
-                "is not error": (m) => m.error === null,
-                "is result": (m) => m.result !== null,
+                "received creation message is not error": (m) => !("error" in m),
+                "received creation message is result": (m) => "result" in m,
             })) {
-                delete state.awaiting_requests[msg.id]
+                delete state.pending_requests[msg.id]
             }
         }
     }
@@ -261,7 +270,6 @@ function is_msg_response(msg) {
 }
 
 function on_msg_cleanup(ws, state, e) {
-    // TODO invoke kill and disconnect
     for (const interval in state.intervals_to_kill) {
         clearInterval(interval)
         delete state.intervals_to_kill[interval]
@@ -274,8 +282,8 @@ function on_msg_cleanup(ws, state, e) {
     check(state, {
         "no intervals": (st) => Object.keys(st.intervals_to_kill).length===0,
         "no timeouts": (st) => Object.keys(st.timeouts_to_kill).length===0,
-        "no pending responses": (st) => Object.keys(st.awaiting_requests).length===0,
-        "no pending requests": (st) => Object.keys(st.pending_requests).length===0,
+        "no pending write responses": (st) => Object.keys(st.pending_responses).length===0,
+        "no pending write requests": (st) => Object.keys(st.pending_requests).length===0,
     })
     ws.close()
 }
