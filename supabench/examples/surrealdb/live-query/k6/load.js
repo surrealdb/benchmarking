@@ -51,7 +51,27 @@ export const options = {
     },
 }
 
-const is_debug = true;
+const is_debug = false;
+
+function generate_state() {
+    return {
+        // stage of the state machine of this test
+        stage: STATE_STAGE_SIGNING_IN,
+        // populated during the live query stage
+        live_id : null,
+        // numbers that repr intervals that need to be cleared
+        intervals_to_kill: {},
+        // numbers that repr timeouts that need to be cleared
+        timeouts_to_kill: {},
+        // map of request IDs that need answering
+        pending_responses: {},
+        // we want to keep track of this, so we know when state is completed
+        // it contains request ids that haven't been sent yet.
+        // Unused, but implemented
+        pending_requests: {},
+        expected_notifications: {},
+    };
+}
 
 export function setup() {
     debug(`Setting up the test with base_url=${base_url} and query=${query}`);
@@ -249,6 +269,12 @@ function on_msg_creating_data(ws, state, e) {
             check(msg, {
                 "live query id matches": (m) => m.result.id === state.live_id,
             })
+            for (const [key, val] of state.expected_notifications) {
+                if (e.data.includes(key)) {
+                    delete state.expected_notifications[key]
+                    break;
+                }
+            }
         } else {
             if (check(msg, {
                 "received creation message is not error": (m) => !("error" in m),
@@ -257,7 +283,7 @@ function on_msg_creating_data(ws, state, e) {
                 delete state.pending_responses[msg.id]
             }
         }
-        if (burst && Object.keys(state.pending_responses).length===0) {
+        if (burst && Object.keys(state.pending_responses).length===0 && Object.keys(state.expected_notifications)) {
             state.stage = STATE_STAGE_CLEANUP
         }
     }
@@ -297,6 +323,7 @@ function on_msg_cleanup(ws, state, e) {
         "no timeouts": (st) => Object.keys(st.timeouts_to_kill).length===0,
         "no pending write responses": (st) => Object.keys(st.pending_responses).length===0,
         "no pending write requests": (st) => Object.keys(st.pending_requests).length===0,
+        "no pending notification responses": (st) => Object.keys(st.expected_notifications).length === 0,
     })
     debug(`Completed scenario, closing connection. Pending responses = ${JSON.stringify(state.pending_responses)}`)
     ws.close()
@@ -308,23 +335,7 @@ export default function(setup) {
     const ws = new WebSocket(`${base_url}`);
     // State describes the stage of the protocol
     // This is declared outside of setup, because setup is run once for all VUs
-    const state =
-         {
-        // stage of the state machine of this test
-        stage: STATE_STAGE_SIGNING_IN,
-            // populated during the live query stage
-            live_id : null,
-            // numbers that repr intervals that need to be cleared
-            intervals_to_kill: {},
-        // numbers that repr timeouts that need to be cleared
-        timeouts_to_kill: {},
-        // map of request IDs that need answering
-        pending_responses: {},
-        // we want to keep track of this, so we know when state is completed
-        // it contains request ids that haven't been sent yet.
-        // Unused, but implemented
-        pending_requests: {},
-    };
+    const state = generate_state()
     ws.onopen = () => {
         // Create and register state machine message handler
         const handler = createOnMessageStateHandler(ws, state)
