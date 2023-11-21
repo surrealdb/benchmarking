@@ -28,14 +28,16 @@ export function getRandomInt(min, max) {
 export function scenario(baseDuration, conns) {
   return {
     executor: 'ramping-vus',
-    startVUs: 1,
+    // startVUs: 1,
+    startVUs: Math.floor(parseInt(conns)),
     stages: [
+      // {
+      //   duration: `${parseInt(baseDuration) / 2}s`,
+      //   target: Math.floor(parseInt(conns)),
+      // },
       {
-        duration: `${parseInt(baseDuration) / 2}s`,
-        target: Math.floor(parseInt(conns)),
-      },
-      {
-        duration: `${(parseInt(baseDuration)) / 2}s`,
+        // duration: `${(parseInt(baseDuration)) / 2}s`,
+        duration: `${(parseInt(baseDuration))}s`,
         target: Math.floor(parseInt(conns)),
       },
       { duration: `10s`, target: 0 },

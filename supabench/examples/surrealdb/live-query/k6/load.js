@@ -51,7 +51,6 @@ export const options = {
     },
 }
 
-const is_debug = false;
 
 function generate_state() {
     return {
@@ -94,9 +93,33 @@ const STATE_STAGE_CLEANUP = 4;
 // Used to transition between handlers without a message required from WS
 const EMPTY_MESSAGE = {data: "{}"}
 
+const log_level = "TRACE";
+const levels = [
+    "INFO",
+    "DEBUG",
+    "TRACE",
+]
+
 function debug(msg) {
-    if (is_debug) {
-        console.log(msg)
+    label_log(msg, "DEBUG")
+}
+
+function info(msg) {
+    label_log(msg, "INFO")
+}
+
+function trace(msg) {
+    label_log(msg, "TRACE")
+}
+
+function label_log(msg, level) {
+    for (const key of levels) {
+        if (key === level) {
+            console.log(msg)
+        }
+        if (key === log_level) {
+            break; // it means the level is more-detailed than current
+        }
     }
 }
 
@@ -112,8 +135,10 @@ function createOnMessageStateHandler(ws, state) {
     return (e) => {
         var ret_msg = e;
         while (ret_msg !== undefined && ret_msg !== null) {
+            trace(`Handling inbound message: ${JSON.stringify(ret_msg)}, state=${JSON.stringify(state)}`)
             // If the handler returns a value, that is the message for the next invocation
             ret_msg = state_handler_mapping[state.stage](ws, state, ret_msg)
+            trace(`Now the ret is: ${JSON.stringify(ret_msg)}, and state is ${JSON.stringify(state)}`)
         }
     }
 }
@@ -147,7 +172,6 @@ function on_msg_signin_in(ws, state, e) {
             fail(`Failed to sign in because received message ${e.data}`)
         }
     }
-    return null
 }
 
 function on_msg_use_scope(ws, state, e) {
@@ -174,7 +198,6 @@ function on_msg_use_scope(ws, state, e) {
             fail(`Failed to invoke USE, msg: ${e.data}`)
         }
     }
-    return null
 }
 
 function on_msg_live_query(ws, state, e) {
@@ -198,7 +221,6 @@ function on_msg_live_query(ws, state, e) {
             return EMPTY_MESSAGE
         }
     }
-    return null
 }
 
 function on_msg_creating_data(ws, state, e) {
@@ -252,7 +274,11 @@ function on_msg_creating_data(ws, state, e) {
                 state.stage = STATE_STAGE_CLEANUP
                 // Since we can't 'return' from here, we send an unnecessary request to guarantee a response
                 // and trigger the next handler
-                ws.send(JSON.stringify({}))
+                ws.send(JSON.stringify({
+                    id: req_id,
+                    method: "query",
+                    params: ["INFO"], // TODO correct syntax or change to something easy
+                }))
             }, write_timeout_ms+wind_down_wait_ms)
 
             // We don't need to wait for the timeout, we can change state immediately if we know we aren't waiting for anything
@@ -269,7 +295,7 @@ function on_msg_creating_data(ws, state, e) {
             check(msg, {
                 "live query id matches": (m) => m.result.id === state.live_id,
             })
-            for (const [key, val] of state.expected_notifications) {
+            for (const key of state.expected_notifications) {
                 if (e.data.includes(key)) {
                     delete state.expected_notifications[key]
                     break;
@@ -347,7 +373,8 @@ export default function(setup) {
     state.timeouts_to_kill[setTimeout(() => {
         // This is a failsafe to terminate the connection in case the test runs too long
         ws.close();
-        fail("Test ran too long and is being terminated early")
+        fail(`Test ran too long and is being terminated early, state=${JSON.stringify(state)}`)
+        state.stage=STATE_STAGE_CLEANUP
     }, sessDuration)] = true
     // The function will immediately end, but the "session" lasts for as long as the connection is open
 }
