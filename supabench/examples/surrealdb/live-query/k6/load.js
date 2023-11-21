@@ -3,7 +3,7 @@ import http from 'k6/http'
 import { check, fail } from 'k6';
 // import ws from 'k6/ws';
 import { WebSocket } from 'k6/experimental/websockets';
-import { setInterval, setTimeout, clearInterval } from 'k6/experimental/timers';
+import { setInterval, setTimeout, clearInterval, clearTimeout } from 'k6/experimental/timers';
 
 // you can use some common things for k6
 // 'scenario' provides you the load scenario with ramping-vus executor and 2 periods of const load
@@ -67,7 +67,8 @@ export function setup() {
             // map of request IDs that need answering
             pending_responses: {},
             // we want to keep track of this, so we know when state is completed
-            // it contains request ids that haven't been sent yet
+            // it contains request ids that haven't been sent yet.
+            // Unused, but implemented
             pending_requests: {},
         },
         tags: {
@@ -188,21 +189,36 @@ function on_msg_live_query(ws, state, e) {
 }
 
 function on_msg_creating_data(ws, state, e) {
-    const burst = false;
+    const burst = true;
+    const burst_number = 50;
+    const write_timeout_ms = 10000;
+    const period_query = "CREATE table CONTENT {'name': 'some name'}"
     if (e === undefined || e === EMPTY_MESSAGE) {
         if (burst) {
-            // TODO send all requests at once and wait for responses without intervals
-            // This is create responses and lq responses
+            console.log(`Creating ${burst_number} requests`)
+            for (let i=0; i<burst_number; i++) {
+                const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
+                state.pending_responses[req_id] = true;
+                ws.send(JSON.stringify({
+                    id: req_id,
+                    method: "query",
+                    params: [period_query]
+                }))
+            }
+            console.log(`Created ${burst_number} requests`)
+            // Set a timeout to stop waiting for responses
+            state.timeouts_to_kill[setTimeout(() => {
+                state.stage = STATE_STAGE_CLEANUP
+            }, write_timeout_ms)] = true;
         } else {
             // This is the signal to create data
             const period_write_ms = 1000;
-            const period_query = "CREATE table CONTENT {'name': 'some name'}"
 
             console.log(`Creating poller for writes`)
             const write_interval = setInterval(() => {
                 console.log(`Writing query`)
                 const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
-                state.pending_requests[req_id] = true;
+                state.pending_responses[req_id] = true;
                 ws.send(JSON.stringify({
                     id: req_id,
                     method: "query",
@@ -210,7 +226,6 @@ function on_msg_creating_data(ws, state, e) {
                 }))
             }, period_write_ms)
 
-            const write_timeout_ms = 10000;
             setTimeout(() => {
                 console.log(`Removing write poller and closing connection`)
                 delete state.intervals_to_kill[write_interval]
@@ -226,6 +241,11 @@ function on_msg_creating_data(ws, state, e) {
                 // and trigger the next handler
                 ws.send(JSON.stringify({}))
             }, write_timeout_ms+wind_down_wait_ms)
+
+            // We don't need to wait for the timeout, we can change state immediately if we know we aren't waiting for anything
+            if (burst && Object.keys(state.pending_responses).length===0) {
+                state.stage = STATE_STAGE_CLEANUP
+            }
         }
 
         // Kill Live Query
@@ -233,7 +253,7 @@ function on_msg_creating_data(ws, state, e) {
         console.log(`Onopen End`)
     } else {
         // This is where we will get live query notifications and create responses
-        console.log(`Received message during creation: ${e.data}`)
+        // console.log(`Received message during creation: ${e.data}`)
         let msg = JSON.parse(e.data);
         if (is_msg_notification(msg)) {
             // Check if for us
@@ -245,7 +265,7 @@ function on_msg_creating_data(ws, state, e) {
                 "received creation message is not error": (m) => !("error" in m),
                 "received creation message is result": (m) => "result" in m,
             })) {
-                delete state.pending_requests[msg.id]
+                delete state.pending_responses[msg.id]
             }
         }
     }
@@ -285,15 +305,13 @@ function on_msg_cleanup(ws, state, e) {
         "no pending write responses": (st) => Object.keys(st.pending_responses).length===0,
         "no pending write requests": (st) => Object.keys(st.pending_requests).length===0,
     })
+    console.log(`Completed scenario, closing connection. Pending responses = ${JSON.stringify(state.pending_responses)}`)
     ws.close()
 }
 
 export default function(setup) {
-    console.log(`Creating websocket to ${base_url}`)
     const ws = new WebSocket(`${base_url}`);
     ws.onopen = () => {
-        console.log("WebSocket established, configuring")
-
         // Create and register state machine message handler
         const handler = createOnMessageStateHandler(ws, setup.state)
         ws.onmessage = handler
@@ -301,6 +319,5 @@ export default function(setup) {
         // Invoke it immediately, because we need to fake an on-connect
         handler({data: "{}"})
     }
-
-    console.log("Setup end")
+    // The function will immediately end, but the "session" lasts for as long as the connection is open
 }
