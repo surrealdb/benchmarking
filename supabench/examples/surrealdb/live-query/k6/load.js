@@ -51,11 +51,11 @@ export const options = {
     },
 }
 
+// Random test id
+const run_id = `runid-${Math.floor(Math.random()*10000)}-runid`;
 
 function generate_state() {
     return {
-        // Random test id
-        run_id: `runid-${Math.floor(Math.random()*10000)}-runid`,
         // stage of the state machine of this test
         stage: STATE_STAGE_SIGNING_IN,
         // populated during the live query stage
@@ -115,9 +115,16 @@ function trace(msg) {
 }
 
 function label_log(msg, level) {
+    const m = label_log_str(msg, level)
+    if (m !== undefined) {
+        console.log(m)
+    }
+}
+
+function label_log_str(msg, level) {
     for (const key of levels) {
         if (key === level) {
-            console.log(msg)
+            return `[${run_id}] ${msg}`
         }
         if (key === log_level) {
             break; // it means the level is more-detailed than current
@@ -374,7 +381,7 @@ export default function(setup) {
     }
     state.timeouts_to_kill[setTimeout(() => {
         // This is a failsafe to terminate the connection in case the test runs too long
-        const msg = `Test ran too long and is being terminated early, state=${JSON.stringify(state)}`
+        const msg = label_log_str(`Test ran too long and is being terminated early, state=${JSON.stringify(state)}`, "INFO")
         state.stage=STATE_STAGE_CLEANUP
         on_msg_cleanup(ws, state, EMPTY_MESSAGE)
         fail(msg)
