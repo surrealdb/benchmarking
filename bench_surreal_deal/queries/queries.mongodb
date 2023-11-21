@@ -1,0 +1,95 @@
+use('surreal_deal');
+
+// Selecting multiple fields from multiple tables using record links
+db.review.aggregate([
+	{
+		"$lookup": {
+			"from": "artist",
+			"localField": "artist",
+			"foreignField": "_id",
+			pipeline: [
+				{ $project: { _id: 0, name:1, email:1, phone:1} }
+			],
+			"as": "artist",
+		}
+		
+	},
+	{
+		"$lookup": {
+			"from": "person",
+			"localField": "person",
+			"foreignField": "_id",
+			pipeline: [
+				{ $project: { _id: 0, name:1, email:1, phone:1} }
+			],
+			"as": "person",
+		}
+		
+	},
+	{
+		"$lookup": {
+			"from": "product",
+			"localField": "product",
+			"foreignField": "_id",
+			pipeline: [
+				{ $project: { _id: 0, name:1, category:1, price:1} }
+			],
+			"as": "product",
+		}
+	}
+]).explain("executionStats")
+
+// .explain("executionStats")
+
+// Selecting multiple fields from multiple tables using graph
+db.order.aggregate([
+	{
+		"$lookup": {
+			"from": "person",
+			"localField": "person",
+			"foreignField": "_id",
+			pipeline: [
+				{ $project: { _id: 0, name:1, email:1, phone:1} }
+			],
+			"as": "person",
+		}
+		
+	},
+	{
+		"$lookup": {
+			"from": "product",
+			"localField": "product",
+			"foreignField": "_id",
+			pipeline: [
+                {
+                    "$lookup": {
+                    "from": "artist",
+                    "localField": "artist",
+                    "foreignField": "_id",
+                    pipeline: [
+                        { $project: { _id: 0, name:1, email:1, phone:1} }
+                    ],
+                    "as": "artist",
+                    }
+                },
+				{ $project: { _id: 0, category:1, description:1, image_url:1, artist:1} }
+			],
+			"as": "product",
+		}
+	},
+	{ $project: { _id: 0, price:1, order_date:1, product_name:1, artist:1, person:1, product:1} }
+]).explain("executionStats")
+
+
+// Name and email for all customers in England
+db.person.find(
+    {"address.country": "England"},
+    {_id: 0, name: 1, email: 1}
+).explain("executionStats")
+
+// Count the number of confirmed orders in Q1 by artists in England
+
+// Delete a specific review
+db.review.deleteOne( { "_id" : "8aea6f25-f0bf-470b-927f-4dacf0beb16a" } )
+
+// Delete reviews from a particular category
