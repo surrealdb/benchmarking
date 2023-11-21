@@ -23,9 +23,11 @@ const db = __ENV.DB ? __ENV.DB : 'k6';
 
 // I recommend you to not remove this variable. So you will be able to tweak test duration.
 const baseDuration = __ENV.DURATION ? __ENV.DURATION : 60;
-const duration = parseInt(baseDuration) + 15;
+// NOT IN MILLISECONDS BECAUSE scenario ACCEPTS SECONDS
+const duration = parseInt(baseDuration) + 15 ;
 const sessionDuration = __ENV.SESS_DURATION ? __ENV.SESS_DURATION : 10;
-const sessDuration = parseInt(sessionDuration);
+// MILLISECONDS
+const sessDuration = parseInt(sessionDuration) * 1000;
 
 // you may access the environment variables specified in make as well
 const conns = __ENV.VUS_COUNT ? __ENV.VUS_COUNT : 1;
@@ -41,36 +43,21 @@ const to = {}
 
 // create options with 'scenario', 'trends' and 'to'
 export const options = {
-  vus: 1,
-  thresholds: to,
-  summaryTrendStats: trends,
-  scenarios: {
-    singleQuery: scenario(duration, conns),
-  },
+    vus: 1,
+    thresholds: to,
+    summaryTrendStats: trends,
+    scenarios: {
+        singleQuery: scenario(duration, conns),
+    },
 }
 
+const is_debug = true;
+
 export function setup() {
-    console.log(`Setting up the test with base_url=${base_url} and query=${query}`);
+    debug(`Setting up the test with base_url=${base_url} and query=${query}`);
     return {
         base_url: base_url,
         query: query,
-        // State describes the stage of the protocol
-        state: {
-            // stage of the state machine of this test
-            stage: STATE_STAGE_SIGNING_IN,
-            // populated during the live query stage
-            live_id : null,
-            // numbers that repr intervals that need to be cleared
-            intervals_to_kill: {},
-            // numbers that repr timeouts that need to be cleared
-            timeouts_to_kill: {},
-            // map of request IDs that need answering
-            pending_responses: {},
-            // we want to keep track of this, so we know when state is completed
-            // it contains request ids that haven't been sent yet.
-            // Unused, but implemented
-            pending_requests: {},
-        },
         tags: {
             base_url: base_url,
             query: query,
@@ -86,6 +73,12 @@ const STATE_STAGE_CLEANUP = 4;
 
 // Used to transition between handlers without a message required from WS
 const EMPTY_MESSAGE = {data: "{}"}
+
+function debug(msg) {
+    if (is_debug) {
+        console.log(msg)
+    }
+}
 
 function createOnMessageStateHandler(ws, state) {
     // Could be an array, but isn't for the sake of clarity
@@ -109,7 +102,7 @@ function on_msg_signin_in(ws, state, e) {
     const msg = JSON.parse(e.data)
     const request_id = "signin_request_id";
     if (Object.keys(msg).length === 0) {
-        // console.log("Empty message, signing in")
+        debug("Empty message, signing in")
         ws.send(JSON.stringify({
             id: request_id,
             method: "signin",
@@ -126,11 +119,11 @@ function on_msg_signin_in(ws, state, e) {
             "is response to signin": (m) => m.id === request_id,
             "is valid": (m) => m.result !== null,
         })) {
-            // console.log("Successfully signed in, changing state")
+            debug("Successfully signed in, changing state")
             state.stage = STATE_STAGE_USE_SCOPE
             return EMPTY_MESSAGE
         } else {
-            // console.log("Unsuccessful signin, failing")
+            debug("Unsuccessful signin, failing")
             fail(`Failed to sign in because received message ${e.data}`)
         }
     }
@@ -140,7 +133,7 @@ function on_msg_signin_in(ws, state, e) {
 function on_msg_use_scope(ws, state, e) {
     const use_req_id = "use_req_id";
     if (e === EMPTY_MESSAGE) {
-        // console.log("Transitioned into signed in state, sending USE request")
+        debug("Transitioned into signed in state, sending USE request")
         ws.send(JSON.stringify({
             id: use_req_id,
             method: "use",
@@ -155,7 +148,7 @@ function on_msg_use_scope(ws, state, e) {
             "is successful": (m) => m.result === null,
         })) {
             state.stage = STATE_STAGE_CREATING_LIVE_QUERY
-            // console.log("Transitioned into used state")
+            debug("Transitioned into used state")
             return EMPTY_MESSAGE
         } else {
             fail(`Failed to invoke USE, msg: ${e.data}`)
@@ -167,7 +160,7 @@ function on_msg_use_scope(ws, state, e) {
 function on_msg_live_query(ws, state, e) {
     const lq_req_id = "live_query_request"
     if (e === EMPTY_MESSAGE) {
-        // console.log("Sending live query request")
+        debug("Sending live query request")
         ws.send(JSON.stringify({
             id: lq_req_id,
             method: "query",
@@ -195,7 +188,7 @@ function on_msg_creating_data(ws, state, e) {
     const period_query = "CREATE table CONTENT {'name': 'some name'}"
     if (e === undefined || e === EMPTY_MESSAGE) {
         if (burst) {
-            // console.log(`Creating ${burst_number} requests`)
+            debug(`Creating ${burst_number} requests`)
             for (let i=0; i<burst_number; i++) {
                 const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
                 state.pending_responses[req_id] = true;
@@ -205,7 +198,7 @@ function on_msg_creating_data(ws, state, e) {
                     params: [period_query]
                 }))
             }
-            // console.log(`Created ${burst_number} requests`)
+            debug(`Created ${burst_number} requests`)
             // Set a timeout to stop waiting for responses
             state.timeouts_to_kill[setTimeout(() => {
                 state.stage = STATE_STAGE_CLEANUP
@@ -214,9 +207,9 @@ function on_msg_creating_data(ws, state, e) {
             // This is the signal to create data
             const period_write_ms = 1000;
 
-            // console.log(`Creating poller for writes`)
+            debug(`Creating poller for writes`)
             const write_interval = setInterval(() => {
-                // console.log(`Writing query`)
+                debug(`Writing query`)
                 const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
                 state.pending_responses[req_id] = true;
                 ws.send(JSON.stringify({
@@ -227,7 +220,7 @@ function on_msg_creating_data(ws, state, e) {
             }, period_write_ms)
 
             setTimeout(() => {
-                // console.log(`Removing write poller and closing connection`)
+                debug(`Removing write poller and closing connection`)
                 delete state.intervals_to_kill[write_interval]
                 clearInterval(write_interval)
             }, write_timeout_ms)
@@ -235,7 +228,7 @@ function on_msg_creating_data(ws, state, e) {
             // Wait for remaining responses to come in
             const wind_down_wait_ms = 1000;
             setTimeout(() => {
-                // console.log("Finished waiting for remaining responses")
+                debug("Finished waiting for remaining responses")
                 state.stage = STATE_STAGE_CLEANUP
                 // Since we can't 'return' from here, we send an unnecessary request to guarantee a response
                 // and trigger the next handler
@@ -249,7 +242,7 @@ function on_msg_creating_data(ws, state, e) {
         }
     } else {
         // This is where we will get live query notifications and create responses
-        // console.log(`Received message during creation: ${e.data}`)
+        debug(`Received message during creation: ${e.data}`)
         let msg = JSON.parse(e.data);
         if (is_msg_notification(msg)) {
             // Check if for us
@@ -263,6 +256,9 @@ function on_msg_creating_data(ws, state, e) {
             })) {
                 delete state.pending_responses[msg.id]
             }
+        }
+        if (burst && Object.keys(state.pending_responses).length===0) {
+            state.stage = STATE_STAGE_CLEANUP
         }
     }
 }
@@ -302,19 +298,45 @@ function on_msg_cleanup(ws, state, e) {
         "no pending write responses": (st) => Object.keys(st.pending_responses).length===0,
         "no pending write requests": (st) => Object.keys(st.pending_requests).length===0,
     })
-    console.log(`Completed scenario, closing connection. Pending responses = ${JSON.stringify(state.pending_responses)}`)
+    debug(`Completed scenario, closing connection. Pending responses = ${JSON.stringify(state.pending_responses)}`)
     ws.close()
 }
 
+// The main VU code
 export default function(setup) {
+    debug("start")
     const ws = new WebSocket(`${base_url}`);
+    // State describes the stage of the protocol
+    // This is declared outside of setup, because setup is run once for all VUs
+    const state =
+         {
+        // stage of the state machine of this test
+        stage: STATE_STAGE_SIGNING_IN,
+            // populated during the live query stage
+            live_id : null,
+            // numbers that repr intervals that need to be cleared
+            intervals_to_kill: {},
+        // numbers that repr timeouts that need to be cleared
+        timeouts_to_kill: {},
+        // map of request IDs that need answering
+        pending_responses: {},
+        // we want to keep track of this, so we know when state is completed
+        // it contains request ids that haven't been sent yet.
+        // Unused, but implemented
+        pending_requests: {},
+    };
     ws.onopen = () => {
         // Create and register state machine message handler
-        const handler = createOnMessageStateHandler(ws, setup.state)
+        const handler = createOnMessageStateHandler(ws, state)
         ws.onmessage = handler
 
         // Invoke it immediately, because we need to fake an on-connect
         handler({data: "{}"})
     }
+    state.timeouts_to_kill[setTimeout(() => {
+        // This is a failsafe to terminate the connection in case the test runs too long
+        ws.close();
+        fail("Test ran too long and is being terminated early")
+    }, sessDuration)] = true
     // The function will immediately end, but the "session" lasts for as long as the connection is open
 }
