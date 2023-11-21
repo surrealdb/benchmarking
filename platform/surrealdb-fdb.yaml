@@ -1,0 +1,81 @@
+# Preferably use the official Helm chart
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surrealdb-fdb
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: surrealdb-fdb
+      app.kubernetes.io/name: surrealdb
+  strategy:
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: surrealdb-fdb
+        app.kubernetes.io/name: surrealdb
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/instance
+                operator: In
+                values:
+                - surrealdb-fdb
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - start
+        env:
+        - name: SURREAL_NO_BANNER
+          value: "true"
+        - name: SURREAL_PATH
+          value: fdb:/config-map/fdb.cluster
+        - name: SURREAL_LOG
+          value: info
+        - name: SURREAL_BIND
+          value: 0.0.0.0:8000
+        - name: SURREAL_USER
+          value: root
+        - name: SURREAL_PASS
+          value: surrealdb
+        - name: SURREAL_AUTH
+          value: "true"
+        # Special image with SurrealDB support (compiled from https://github.com/surrealdb/surrealdb/commit/920cdfc71a0e8b6f4e176b9c33e66bbe9c8b37d8)
+        image: europe-docker.pkg.dev/staging-12bb/surrealdb-dev/surrealdb-fdb:latest
+        imagePullPolicy: Always
+        name: surrealdb
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "4"
+            memory: 8Gi
+          requests:
+            cpu: "4"
+            memory: 6Gi
+        volumeMounts:
+        - mountPath: /config-map
+          name: config-map
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      # This comes from the FoundationDB cluster
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: cluster-file
+            path: fdb.cluster
+          name: fdb-cluster-config
+        name: config-map

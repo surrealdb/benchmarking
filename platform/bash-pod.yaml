@@ -1,0 +1,54 @@
+# This YAML creates a simple pod where you can upload files and run the benchmarks from.
+# It also mounts the FoundationDB cluster file in case it exists
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bash
+  namespace: default
+spec:
+  containers:
+  - image: ubuntu:latest
+    imagePullPolicy: Always
+    name: bash
+    stdin: true
+    stdinOnce: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    resources:
+      limits:
+        cpu: 4
+        memory: 4G
+      requests:
+        cpu: 3
+        memory: 4G
+    tty: true
+    volumeMounts:
+      - name: config-map
+        mountPath: /config-map
+  restartPolicy: Always
+  volumes:
+    - name: config-map
+      configMap:
+        name: fdb-cluster-config
+        items:
+          - key: cluster-file
+            path: fdb.cluster
+
+# --- k6 setup ---
+# sudo apt update
+# sudo apt install gpg ca-certificates curl
+# mkdir /root/.gnupg
+# gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+# echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | tee /etc/apt/sources.list.d/k6.list
+# apt update
+# apt install k6
+
+# --- foundationdb setup ---
+# sudo apt update
+# sudo apt install cmake wget
+# wget https://github.com/apple/foundationdb/releases/download/7.1.37/foundationdb-clients_7.1.37-1_amd64.deb
+# dpkg -i foundationdb-clients_7.1.37-1_amd64.deb
+# ... copy https://github.com/surrealdb/benchmarking repo to /benchmarking (kubectl cp benchmarking bash:/benchmarking)...
+# cd /benchmarking/go-ycsb
+# make build
