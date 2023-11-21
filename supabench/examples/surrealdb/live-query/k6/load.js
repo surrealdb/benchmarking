@@ -54,6 +54,8 @@ export const options = {
 
 function generate_state() {
     return {
+        // Random test id
+        run_id: `runid-${Math.floor(Math.random()*10000)}-runid`,
         // stage of the state machine of this test
         stage: STATE_STAGE_SIGNING_IN,
         // populated during the live query stage
