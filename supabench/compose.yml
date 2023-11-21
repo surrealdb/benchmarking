@@ -1,0 +1,26 @@
+version: '3.5'
+services:
+  supabench:
+    build: .
+    expose:
+      - 8090
+    ports:
+      - 8090:8090
+    environment:
+      # IP where the Supabench server is exposed and accessible by the runners
+      - SUPABENCH_URI=http://<ip>:8090/_/
+      # Token used by runners to interact with the Supabench server
+      - SUPABENCH_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token
+      # AWS credentials used by Terraform to create runners
+      - SUPABENCH_AWS_ACCESS_KEY_ID=<aws-key>
+      - SUPABENCH_AWS_SECRET_ACCESS_KEY=<aws-secret>
+      # Path to the PEM file needed for Terraform to SSH into the runners
+      - SUPABENCH_PRIVATE_KEY_LOCATION=<path>
+    networks:
+      - supabench
+    volumes:
+      - ./pb_data:/pb_data
+
+networks:
+  supabench:
+    driver: bridge
