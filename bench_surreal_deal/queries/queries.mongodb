@@ -8,11 +8,11 @@ db.review.aggregate([
 			"localField": "artist",
 			"foreignField": "_id",
 			pipeline: [
-				{ $project: { _id: 0, name:1, email:1, phone:1} }
+				{ $project: { _id: 0, name: 1, email: 1, phone: 1 } }
 			],
 			"as": "artist",
 		}
-		
+
 	},
 	{
 		"$lookup": {
@@ -20,11 +20,11 @@ db.review.aggregate([
 			"localField": "person",
 			"foreignField": "_id",
 			pipeline: [
-				{ $project: { _id: 0, name:1, email:1, phone:1} }
+				{ $project: { _id: 0, name: 1, email: 1, phone: 1 } }
 			],
 			"as": "person",
 		}
-		
+
 	},
 	{
 		"$lookup": {
@@ -32,7 +32,7 @@ db.review.aggregate([
 			"localField": "product",
 			"foreignField": "_id",
 			pipeline: [
-				{ $project: { _id: 0, name:1, category:1, price:1} }
+				{ $project: { _id: 0, name: 1, category: 1, price: 1 } }
 			],
 			"as": "product",
 		}
@@ -49,11 +49,11 @@ db.order.aggregate([
 			"localField": "person",
 			"foreignField": "_id",
 			pipeline: [
-				{ $project: { _id: 0, name:1, email:1, phone:1} }
+				{ $project: { _id: 0, name: 1, email: 1, phone: 1 } }
 			],
 			"as": "person",
 		}
-		
+
 	},
 	{
 		"$lookup": {
@@ -61,35 +61,36 @@ db.order.aggregate([
 			"localField": "product",
 			"foreignField": "_id",
 			pipeline: [
-                {
-                    "$lookup": {
-                    "from": "artist",
-                    "localField": "artist",
-                    "foreignField": "_id",
-                    pipeline: [
-                        { $project: { _id: 0, name:1, email:1, phone:1} }
-                    ],
-                    "as": "artist",
-                    }
-                },
-				{ $project: { _id: 0, category:1, description:1, image_url:1, artist:1} }
+				{
+					"$lookup": {
+						"from": "artist",
+						"localField": "artist",
+						"foreignField": "_id",
+						pipeline: [
+							{ $project: { _id: 0, name: 1, email: 1, phone: 1 } }
+						],
+						"as": "artist",
+					}
+				},
+				{ $project: { _id: 0, category: 1, description: 1, image_url: 1, artist: 1 } }
 			],
 			"as": "product",
 		}
 	},
-	{ $project: { _id: 0, price:1, order_date:1, product_name:1, artist:1, person:1, product:1} }
+	{ $project: { _id: 0, price: 1, order_date: 1, product_name: 1, artist: 1, person: 1, product: 1 } }
 ]).explain("executionStats")
 
 
 // Name and email for all customers in England
 db.person.find(
-    {"address.country": "England"},
-    {_id: 0, name: 1, email: 1}
+	{ "address.country": "England" },
+	{ _id: 0, name: 1, email: 1 }
 ).explain("executionStats")
 
 // Count the number of confirmed orders in Q1 by artists in England
 
 // Delete a specific review
-db.review.deleteOne( { "_id" : "8aea6f25-f0bf-470b-927f-4dacf0beb16a" } )
+db.review.deleteOne({ "_id": "8aea6f25-f0bf-470b-927f-4dacf0beb16a" })
 
 // Delete reviews from a particular category
+db.review.deleteMany({ product: { $in: db.product.distinct("_id", { category: "charcoal" }) } });
