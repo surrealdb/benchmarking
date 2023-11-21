@@ -275,7 +275,7 @@ function on_msg_creating_data(ws, state, e) {
                 // Since we can't 'return' from here, we send an unnecessary request to guarantee a response
                 // and trigger the next handler
                 ws.send(JSON.stringify({
-                    id: req_id,
+                    id: "invoke-next-stage",
                     method: "query",
                     params: ["INFO"], // TODO correct syntax or change to something easy
                 }))
@@ -372,9 +372,10 @@ export default function(setup) {
     }
     state.timeouts_to_kill[setTimeout(() => {
         // This is a failsafe to terminate the connection in case the test runs too long
-        ws.close();
-        fail(`Test ran too long and is being terminated early, state=${JSON.stringify(state)}`)
+        const msg = `Test ran too long and is being terminated early, state=${JSON.stringify(state)}`
         state.stage=STATE_STAGE_CLEANUP
+        on_msg_cleanup(ws, state, EMPTY_MESSAGE)
+        fail(msg)
     }, sessDuration)] = true
     // The function will immediately end, but the "session" lasts for as long as the connection is open
 }
