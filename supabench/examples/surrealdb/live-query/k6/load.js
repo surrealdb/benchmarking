@@ -1,6 +1,6 @@
 // some k6 related imports
 import http from 'k6/http'
-import { check, fail } from 'k6';
+import { check, fail, abort} from 'k6';
 // import ws from 'k6/ws';
 import { WebSocket } from 'k6/experimental/websockets';
 import { setInterval, setTimeout, clearInterval, clearTimeout } from 'k6/experimental/timers';
@@ -72,6 +72,8 @@ function generate_state() {
         pending_requests: {},
         expected_notifications: {},
         debug_requests_responses: [],
+        // Sometimes we will receive notifications before we transition state properly
+        received_notifications: [],
     };
 }
 
@@ -165,10 +167,10 @@ function createOnMessageStateHandler(ws, state) {
     }
     return (e) => {
         var ret_msg = e;
-        state.debug_requests_responses.push(debug_resp(e))
+        state.debug_requests_responses.push(debug_resp(e.data))
         while (ret_msg !== undefined && ret_msg !== null) {
             if (ret_msg!==e) {
-                state.debug_requests_responses.push(debug_fake(ret_msg))
+                state.debug_requests_responses.push(debug_fake(ret_msg.data))
             }
             trace(`Handling inbound message: ${JSON.stringify(ret_msg)}, state=${JSON.stringify(state)}`)
             // If the handler returns a value, that is the message for the next invocation
@@ -205,8 +207,9 @@ function on_msg_signin_in(ws, state, e) {
             state.stage = STATE_STAGE_USE_SCOPE
             return EMPTY_MESSAGE
         } else {
-            debug("Unsuccessful signin, failing")
+            debug(`Unsuccessful signin, failing: ${e.data}`)
             fail(`Failed to sign in because received message ${e.data}`)
+            abort("Booya signin abort")
         }
     }
 }
@@ -235,6 +238,7 @@ function on_msg_use_scope(ws, state, e) {
             return EMPTY_MESSAGE
         } else {
             fail(`Failed to invoke USE, msg: ${e.data}`)
+            abort("Booya fail message on cleanup")
         }
     }
 }
@@ -252,14 +256,29 @@ function on_msg_live_query(ws, state, e) {
         ws.send(send_msg)
     } else {
         const msg = JSON.parse(e.data)
-        if (check(msg, {
+        trace(`The message is ${e.data}`)
+
+        if (is_msg_notification(msg)) {
+            // Sometimes we can receive notification responses before we receive the live query response?
+            state.received_notifications.push(msg)
+        } else if (check(msg, {
             "is live query response": (m) => m.id === lq_req_id,
-            "has result": (m) => m.result !==null,
-            "has live query uuid": (m) => m.result[0].result !== null,
+            "live query response has result (i.e. no error)": (m) => (("result" in m)),
+            "has live query uuid": (m) => (
+                ("result" in m) && // m.result exists
+                Array.isArray(m.result) && // m.result is array
+                (Object.keys(m.result).length>0) && // m.result has an item
+                ("result" in m.result[0]) && // result has a result
+                (m.result[0].result !== null)), // the result's result is not empty
         })) {
             state.live_id = msg.result[0].result
             state.stage = STATE_STAGE_CREATING_DATA
             return EMPTY_MESSAGE
+        } else {
+            // Since we are assuming that the test is linear, we aren't going to receive another message
+            end_test(ws, state)
+            fail(`Did not receive expected live query response: ${e.data}`)
+            abort("Booya live response")
         }
     }
 }
@@ -344,7 +363,7 @@ function on_msg_creating_data(ws, state, e) {
             check(msg, {
                 "live query id matches": (m) => m.result.id === state.live_id,
             })
-            for (const key of state.expected_notifications) {
+            for (const key of Object.keys(state.expected_notifications)) {
                 if (e.data.includes(key)) {
                     delete state.expected_notifications[key]
                     break;
@@ -372,21 +391,13 @@ function on_msg_creating_data(ws, state, e) {
 }
 
 function is_msg_notification(msg) {
-    if ("result" in msg) {
-        const result = msg.result
-        if ("action" in msg) {
-            return true;
-        }
-    }
+    return ("result" in msg) &&
+        ("action" in msg.result)
 }
 
 function is_msg_response(msg) {
-    if ("result" in msg) {
-        const result = msg.result;
-        if ("result" in result) {
-            return true
-        }
-    }
+    return ("result" in msg) &&
+        ("result" in msg.result)
 }
 
 function on_msg_cleanup(ws, state, e) {
@@ -394,15 +405,7 @@ function on_msg_cleanup(ws, state, e) {
     end_test(ws, state)
 }
 
-function end_test(ws, state) {
-    for (const interval in state.intervals_to_kill) {
-        clearInterval(interval)
-        delete state.intervals_to_kill[interval]
-    }
-    for (const timeout in state.timeouts_to_kill) {
-        clearTimeout(timeout)
-        delete state.timeouts_to_kill[timeout]
-    }
+function end_test(ws, state, failmsg) {
     // Validate end state
     check(state, {
         "no intervals": (st) => Object.keys(st.intervals_to_kill).length===0,
@@ -413,6 +416,17 @@ function end_test(ws, state) {
     })
     debug(`Completed scenario, closing connection. Pending responses = ${JSON.stringify(state.pending_responses)}`)
     ws.close()
+    for (const interval in state.intervals_to_kill) {
+        clearInterval(interval)
+        delete state.intervals_to_kill[interval]
+    }
+    for (const timeout in state.timeouts_to_kill) {
+        clearTimeout(timeout)
+        delete state.timeouts_to_kill[timeout]
+    }
+    if (failmsg !== undefined) {
+        fail(failmsg)
+    }
 }
 
 // The main VU code
@@ -437,9 +451,8 @@ export default function(setup) {
         for (var i=0; i<state.debug_requests_responses.length; i++) {
             debug(`[${i}]: ${JSON.stringify(state.debug_requests_responses[i])}`)
         }
-        debug("failing scenario")
-        end_test(ws, state)
-        fail(msg)
+        debug("script failing scenario due to timeout")
+        end_test(ws, state, msg)
     }, sessDuration)] = true
     // The function will immediately end, but the "session" lasts for as long as the connection is open
 }
