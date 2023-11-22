@@ -94,3 +94,26 @@ db.review.deleteOne({ "_id": "8aea6f25-f0bf-470b-927f-4dacf0beb16a" })
 
 // Delete reviews from a particular category
 db.review.deleteMany({ product: { $in: db.product.distinct("_id", { category: "charcoal" }) } });
+
+// Update customer address
+db.person.updateOne(
+	{ _id: "41e60664-e96c-465d-b92a-eee2f143c05d" },
+	{
+		$set: {
+			address: {
+				'address_line_1': '497 Ballycander',
+				'address_line_2': null,
+				'city': 'Bromyard',
+				'country': 'Wales',
+				'post_code': 'ZX8N 4VJ',
+				'coordinates': [68.772592, -35.491877]
+			}
+		}
+	}
+)
+
+// Update discount for products
+db.product.updateMany(
+    { price: { $lt: 1000 } },
+    { $set: { discount: 0.2 } }
+)
