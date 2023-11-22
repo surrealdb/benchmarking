@@ -71,7 +71,29 @@ function generate_state() {
         // Unused, but implemented
         pending_requests: {},
         expected_notifications: {},
+        debug_requests_responses: [],
     };
+}
+
+function debug_req(msg) {
+    return {
+        type: "request",
+        content: msg,
+    }
+}
+
+function debug_resp(msg) {
+    return {
+        type: "response",
+        content: msg,
+    }
+}
+
+function debug_fake(msg) {
+    return {
+        type: "fake",
+        content: msg,
+    }
 }
 
 export function setup() {
@@ -95,7 +117,7 @@ const STATE_STAGE_CLEANUP = 4;
 // Used to transition between handlers without a message required from WS
 const EMPTY_MESSAGE = {data: "{}"}
 
-const log_level = "TRACE";
+const log_level = "DEBUG";
 const levels = [
     "INFO",
     "DEBUG",
@@ -143,7 +165,11 @@ function createOnMessageStateHandler(ws, state) {
     }
     return (e) => {
         var ret_msg = e;
+        state.debug_requests_responses.push(debug_resp(e))
         while (ret_msg !== undefined && ret_msg !== null) {
+            if (ret_msg!==e) {
+                state.debug_requests_responses.push(debug_fake(ret_msg))
+            }
             trace(`Handling inbound message: ${JSON.stringify(ret_msg)}, state=${JSON.stringify(state)}`)
             // If the handler returns a value, that is the message for the next invocation
             ret_msg = state_handler_mapping[state.stage](ws, state, ret_msg)
@@ -157,7 +183,7 @@ function on_msg_signin_in(ws, state, e) {
     const request_id = "signin_request_id";
     if (Object.keys(msg).length === 0) {
         debug("Empty message, signing in")
-        ws.send(JSON.stringify({
+        const send_msg = JSON.stringify({
             id: request_id,
             method: "signin",
             params: [ {
@@ -167,7 +193,9 @@ function on_msg_signin_in(ws, state, e) {
                 db: db,
                 // sc: null,
             }],
-        }))
+        })
+        state.debug_requests_responses.push(debug_req(send_msg))
+        ws.send(send_msg)
     } else {
         if (check(msg, {
             "is response to signin": (m) => m.id === request_id,
@@ -187,13 +215,15 @@ function on_msg_use_scope(ws, state, e) {
     const use_req_id = "use_req_id";
     if (e === EMPTY_MESSAGE) {
         debug("Transitioned into signed in state, sending USE request")
-        ws.send(JSON.stringify({
+        const send_msg = JSON.stringify({
             id: use_req_id,
             method: "use",
             params: [
                 ns, db
             ],
-        }))
+        })
+        state.debug_requests_responses.push(debug_req(send_msg))
+        ws.send(send_msg)
     } else {
         const msg = JSON.parse(e.data)
         if (check(msg, {
@@ -213,11 +243,13 @@ function on_msg_live_query(ws, state, e) {
     const lq_req_id = "live_query_request"
     if (e === EMPTY_MESSAGE) {
         debug("Sending live query request")
-        ws.send(JSON.stringify({
+        const send_msg = JSON.stringify({
             id: lq_req_id,
             method: "query",
             params: [ query ]
-        }))
+        })
+        state.debug_requests_responses.push(debug_req(send_msg))
+        ws.send(send_msg)
     } else {
         const msg = JSON.parse(e.data)
         if (check(msg, {
@@ -243,11 +275,15 @@ function on_msg_creating_data(ws, state, e) {
             for (let i=0; i<burst_number; i++) {
                 const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
                 state.pending_responses[req_id] = true;
-                ws.send(JSON.stringify({
+            }
+            for (const req_id of Object.keys(state.pending_responses)) {
+                const send_msg = JSON.stringify({
                     id: req_id,
                     method: "query",
                     params: [period_query]
-                }))
+                })
+                state.debug_requests_responses.push(debug_req(send_msg))
+                ws.send(send_msg)
             }
             debug(`Created ${burst_number} requests`)
             // Set a timeout to stop waiting for responses
@@ -263,11 +299,13 @@ function on_msg_creating_data(ws, state, e) {
                 debug(`Writing query`)
                 const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
                 state.pending_responses[req_id] = true;
-                ws.send(JSON.stringify({
+                const send_msg =JSON.stringify({
                     id: req_id,
                     method: "query",
                     params: [period_query]
-                }))
+                })
+                state.debug_requests_responses.push(debug_req(send_msg))
+                ws.send(send_msg)
             }, period_write_ms)
 
             setTimeout(() => {
@@ -283,11 +321,13 @@ function on_msg_creating_data(ws, state, e) {
                 state.stage = STATE_STAGE_CLEANUP
                 // Since we can't 'return' from here, we send an unnecessary request to guarantee a response
                 // and trigger the next handler
-                ws.send(JSON.stringify({
+                const send_msg = JSON.stringify({
                     id: "invoke-next-stage",
                     method: "query",
                     params: ["INFO"], // TODO correct syntax or change to something easy
-                }))
+                })
+                state.debug_requests_responses.push(debug_req(send_msg))
+                ws.send(send_msg)
             }, write_timeout_ms+wind_down_wait_ms)
 
             // We don't need to wait for the timeout, we can change state immediately if we know we aren't waiting for anything
@@ -297,7 +337,7 @@ function on_msg_creating_data(ws, state, e) {
         }
     } else {
         // This is where we will get live query notifications and create responses
-        debug(`Received message during creation: ${e.data}`)
+        trace(`Received message during creation: ${e.data}`)
         let msg = JSON.parse(e.data);
         if (is_msg_notification(msg)) {
             // Check if for us
@@ -320,6 +360,13 @@ function on_msg_creating_data(ws, state, e) {
         }
         if (burst && Object.keys(state.pending_responses).length===0 && Object.keys(state.expected_notifications)) {
             state.stage = STATE_STAGE_CLEANUP
+            const send_msg = JSON.stringify({
+                id: "invoke-next-stage-after-collecting-results",
+                method: "query",
+                params: ["INFO"], // TODO correct syntax or change to something easy
+            })
+            state.debug_requests_responses.push(debug_req(send_msg))
+            ws.send(send_msg)
         }
     }
 }
@@ -344,6 +391,10 @@ function is_msg_response(msg) {
 
 function on_msg_cleanup(ws, state, e) {
     // TODO Kill Live Query
+    end_test(ws, state)
+}
+
+function end_test(ws, state) {
     for (const interval in state.intervals_to_kill) {
         clearInterval(interval)
         delete state.intervals_to_kill[interval]
@@ -381,9 +432,13 @@ export default function(setup) {
     }
     state.timeouts_to_kill[setTimeout(() => {
         // This is a failsafe to terminate the connection in case the test runs too long
-        const msg = label_log_str(`Test ran too long and is being terminated early, state=${JSON.stringify(state)}`, "INFO")
+        const msg = label_log_str(`Test ran too long and has been terminated early, state=${JSON.stringify(state)}`, "INFO")
         state.stage=STATE_STAGE_CLEANUP
-        on_msg_cleanup(ws, state, EMPTY_MESSAGE)
+        for (var i=0; i<state.debug_requests_responses.length; i++) {
+            debug(`[${i}]: ${JSON.stringify(state.debug_requests_responses[i])}`)
+        }
+        debug("failing scenario")
+        end_test(ws, state)
         fail(msg)
     }, sessDuration)] = true
     // The function will immediately end, but the "session" lasts for as long as the connection is open
