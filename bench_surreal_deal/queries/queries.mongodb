@@ -117,3 +117,60 @@ db.product.updateMany(
     { price: { $lt: 1000 } },
     { $set: { discount: 0.2 } }
 )
+
+// # Transaction - New Artist creates their first product
+session = db.getMongo().startSession( { readPreference: { mode: "primary" } } );
+session.startTransaction( { readConcern: { level: "local" }, writeConcern: { w: "majority" } } );
+try {
+
+    // -- insert into the artist table
+db.artist.insertOne( {
+        '_id': 'b8683656-6fe3-47ae-830c-41451c3ce953',
+        'first_name': 'Anderson',
+        'last_name': 'West',
+        'name': 'Anderson West',
+        'company_name': 'Atkins(ws) (ATK)',
+        'email': 'six1933@gmail.com',
+        'phone': '056 5881 1126',
+        'address': {
+                'address_line_1': '639 Connaugh',
+                'address_line_2': null,
+                'city': 'Ripon',
+                'country': 'Scotland',
+                'post_code': 'CG3U 4TH',
+                'coordinates': [4.273648, -112.907273]
+                }
+        });
+
+// -- insert into the product table
+db.product.findAndModify(
+    {
+        query:{
+            '_id': 'd8f59414-4484-4634-a866-8b607fd2311e'
+        },
+        update: {
+            $currentDate: {"creation_history.created_at":{ $type: "date" }},
+            $set: {
+                'name': 'managed edt allocated pda',
+                'description': 'counseling dildo greek pan works interest xhtml wrong dennis available cl specific next tower webcam peace magic',
+                'category': 'watercolor',
+                'price': 15735.96,
+                'currency': '£',
+                'discount': null,
+                'quantity': 1,
+                'image_url': 'https://source.unsplash.com/1920x1080?',
+                "artist": 'b8683656-6fe3-47ae-830c-41451c3ce953',
+                "creation_history.quantity": 1
+            }
+        },
+        upsert:true,
+        new:true
+    });
+} catch (error) {
+    // Abort transaction on error
+    session.abortTransaction();
+    throw error;
+}
+// Commit the transaction using write concern set at transaction start
+session.commitTransaction();
+session.endSession();
