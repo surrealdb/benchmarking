@@ -2,7 +2,6 @@
 from mimesis.locales import Locale
 from mimesis.keys import maybe
 from mimesis.schema import Field, Schema
-from mimesis.enums import TimestampFormat
 from mimesis import Datetime
 
 dt = Datetime()
@@ -101,7 +100,7 @@ print("artist data created")
 ## product
 
 def product_generator() -> dict:
-    created_at = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
+    created_at = dt.datetime(start=2023, end=2023)
     quantity = f('integer_number', start=0, end=20)
     return {
         "_id":f("uuid"),
@@ -137,7 +136,7 @@ def order_generator() -> dict:
     person_number = f('integer_number', start=0, end=person_id_count)
     product_number = f('integer_number', start=0, end=product_id_count)
     shipping_address = person_data[person_number]['address']
-    order_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
+    order_date = dt.datetime(start=2023, end=2023)
     return {
         "_id":f("uuid"),
         "person":person_data[person_number]['_id'],
