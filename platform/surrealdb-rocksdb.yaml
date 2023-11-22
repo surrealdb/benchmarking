@@ -1,0 +1,96 @@
+# Preferably use the official Helm chart
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: surrealdb-rocksdb
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: surrealdb-rocksdb
+      app.kubernetes.io/name: surrealdb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: surrealdb-rocksdb
+        app.kubernetes.io/name: surrealdb
+    spec:
+      initContainers:
+      - args:
+        - sh
+        - -c
+        - chown -R 65532:65532 /data
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: surrealdb-rocksdb-chown
+        volumeMounts:
+        - mountPath: /data
+          name: rocksdb
+      containers:
+      - args:
+        - start
+        env:
+        - name: SURREAL_NO_BANNER
+          value: "true"
+        - name: SURREAL_PATH
+          value: rocksdb:/data/rocksdb
+        - name: SURREAL_LOG
+          value: info
+        - name: SURREAL_BIND
+          value: 0.0.0.0:8000
+        - name: SURREAL_AUTH
+          value: "true"
+        - name: SURREAL_USER
+          value: root
+        - name: SURREAL_PASS
+          value: surrealdb
+        image: surrealdb/surrealdb:1.0.0
+        imagePullPolicy: IfNotPresent
+        name: surrealdb
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4
+            memory: 8G
+          requests:
+            cpu: 4
+            memory: 8G
+        volumeMounts:
+        - mountPath: /data
+          name: rocksdb
+      volumes:
+      - name: rocksdb
+        persistentVolumeClaim:
+          claimName: pvc-rocksdb
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-rocksdb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: premium-rwo
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: surrealdb-rocksdb
+  namespace: default
+spec:
+  defaultBackend:
+    service:
+      name: surrealdb-rocksdb
+      port:
+        number: 8000

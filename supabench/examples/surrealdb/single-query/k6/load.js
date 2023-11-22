@@ -12,7 +12,7 @@ export { handleSummary } from './summary.js'
 
 // you may access the environment variables specified in entrypoint.sh.tpl with __ENV.VAR_NAME
 const username = __ENV.SUT_USERNAME ? __ENV.SUT_USERNAME : 'root'
-const password = __ENV.SUT_PASSWORD ? __ENV.SUT_PASSWORD : 'root'
+const password = __ENV.SUT_PASSWORD ? __ENV.SUT_PASSWORD : 'surrealdb'
 const base_url = __ENV.SUT_URL ? __ENV.SUT_URL : 'http://localhost:8000'
 const query = __ENV.QUERY ? __ENV.QUERY : 'SELECT * FROM table:1';
 const ns = __ENV.NS ? __ENV.NS : 'k6';
