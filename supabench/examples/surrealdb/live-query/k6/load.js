@@ -1,6 +1,6 @@
 // some k6 related imports
 import http from 'k6/http'
-import { check, fail, abort} from 'k6';
+import { check, fail, abort, sleep} from 'k6';
 // import ws from 'k6/ws';
 import { WebSocket } from 'k6/experimental/websockets';
 import { setInterval, setTimeout, clearInterval, clearTimeout } from 'k6/experimental/timers';
@@ -25,7 +25,7 @@ const db = __ENV.DB ? __ENV.DB : 'k6';
 const baseDuration = __ENV.DURATION ? __ENV.DURATION : 60;
 // NOT IN MILLISECONDS BECAUSE scenario ACCEPTS SECONDS
 const duration = parseInt(baseDuration) + 15 ;
-const sessionDuration = __ENV.SESS_DURATION ? __ENV.SESS_DURATION : 10;
+const sessionDuration = __ENV.SESS_DURATION ? __ENV.SESS_DURATION : duration;
 // MILLISECONDS
 const sessDuration = parseInt(sessionDuration) * 1000;
 
@@ -52,7 +52,7 @@ export const options = {
 }
 
 // Random test id
-const run_id = `runid-${Math.floor(Math.random()*10000)}-runid`;
+var run_id = `runid-unset-runid`;
 
 function generate_state() {
     return {
@@ -74,12 +74,16 @@ function generate_state() {
         debug_requests_responses: [],
         // Sometimes we will receive notifications before we transition state properly
         received_notifications: [],
+        // We declare the test timeout, so that we can remove it if the test completes successfully
+        // But not remove it if the test fails due to this timeout
+        test_timeout: undefined,
     };
 }
 
 function debug_req(msg) {
     return {
         type: "request",
+        when: new Date(Date.now()).toISOString(),
         content: msg,
     }
 }
@@ -87,6 +91,7 @@ function debug_req(msg) {
 function debug_resp(msg) {
     return {
         type: "response",
+        when: new Date(Date.now()).toISOString(),
         content: msg,
     }
 }
@@ -94,6 +99,7 @@ function debug_resp(msg) {
 function debug_fake(msg) {
     return {
         type: "fake",
+        when: new Date(Date.now()).toISOString(),
         content: msg,
     }
 }
@@ -103,6 +109,8 @@ export function setup() {
     return {
         base_url: base_url,
         query: query,
+        ns: ns,
+        db: db,
         tags: {
             base_url: base_url,
             query: query,
@@ -110,13 +118,21 @@ export function setup() {
     };
 }
 
+// Initial state, during which we sign in
 const STATE_STAGE_SIGNING_IN = 0;
+// Having signed in, we send a USE request
 const STATE_STAGE_USE_SCOPE = 1;
+// Then we establish a live query
 const STATE_STAGE_CREATING_LIVE_QUERY = 2;
+// Create and capture data for the live query
 const STATE_STAGE_CREATING_DATA = 3;
+// Remove all timers, perform checks
 const STATE_STAGE_CLEANUP = 4;
+// Similar to cleanup stage, but avoids removing test timeouts
+const STATE_STAGE_TIMEOUT = 5;
 
 // Used to transition between handlers without a message required from WS
+// String value used because we JSON.parse data
 const EMPTY_MESSAGE = {data: "{}"}
 
 const log_level = "DEBUG";
@@ -156,7 +172,7 @@ function label_log_str(msg, level) {
     }
 }
 
-function createOnMessageStateHandler(ws, state) {
+function createOnMessageStateHandler(ws, setup, state) {
     // Could be an array, but isn't for the sake of clarity
     const state_handler_mapping= {
         [STATE_STAGE_SIGNING_IN]: on_msg_signin_in,
@@ -174,15 +190,15 @@ function createOnMessageStateHandler(ws, state) {
             }
             trace(`Handling inbound message: ${JSON.stringify(ret_msg)}, state=${JSON.stringify(state)}`)
             // If the handler returns a value, that is the message for the next invocation
-            ret_msg = state_handler_mapping[state.stage](ws, state, ret_msg)
+            ret_msg = state_handler_mapping[state.stage](ws, setup, state, ret_msg)
             trace(`Now the ret is: ${JSON.stringify(ret_msg)}, and state is ${JSON.stringify(state)}`)
         }
     }
 }
 
-function on_msg_signin_in(ws, state, e) {
+function on_msg_signin_in(ws, setup, state, e) {
     const msg = JSON.parse(e.data)
-    const request_id = "signin_request_id";
+    const request_id = `signin_request_id_${run_id}`;
     if (Object.keys(msg).length === 0) {
         debug("Empty message, signing in")
         const send_msg = JSON.stringify({
@@ -191,8 +207,8 @@ function on_msg_signin_in(ws, state, e) {
             params: [ {
                 user: username,
                 pass: password,
-                ns: ns,
-                db: db,
+                ns: setup.ns,
+                db: setup.db,
                 // sc: null,
             }],
         })
@@ -201,21 +217,21 @@ function on_msg_signin_in(ws, state, e) {
     } else {
         if (check(msg, {
             "is response to signin": (m) => m.id === request_id,
-            "is valid": (m) => m.result !== null,
+            "is signin result": (m) => "result" in m,
+            "is not signin error": (m) => !("error" in m)
         })) {
             debug("Successfully signed in, changing state")
             state.stage = STATE_STAGE_USE_SCOPE
             return EMPTY_MESSAGE
         } else {
             debug(`Unsuccessful signin, failing: ${e.data}`)
-            fail(`Failed to sign in because received message ${e.data}`)
-            abort("Booya signin abort")
+            end_test(ws, state, `Failed to sign in because received message ${e.data}`)
         }
     }
 }
 
-function on_msg_use_scope(ws, state, e) {
-    const use_req_id = "use_req_id";
+function on_msg_use_scope(ws, setup, state, e) {
+    const use_req_id = `use_req_id_${run_id}`;
     if (e === EMPTY_MESSAGE) {
         debug("Transitioned into signed in state, sending USE request")
         const send_msg = JSON.stringify({
@@ -237,14 +253,13 @@ function on_msg_use_scope(ws, state, e) {
             debug("Transitioned into used state")
             return EMPTY_MESSAGE
         } else {
-            fail(`Failed to invoke USE, msg: ${e.data}`)
-            abort("Booya fail message on cleanup")
+            end_test(ws, state, `Failed to invoke USE, msg: ${e.data}`)
         }
     }
 }
 
-function on_msg_live_query(ws, state, e) {
-    const lq_req_id = "live_query_request"
+function on_msg_live_query(ws, setup, state, e) {
+    const lq_req_id = `live_query_request_${run_id}`
     if (e === EMPTY_MESSAGE) {
         debug("Sending live query request")
         const send_msg = JSON.stringify({
@@ -256,7 +271,7 @@ function on_msg_live_query(ws, state, e) {
         ws.send(send_msg)
     } else {
         const msg = JSON.parse(e.data)
-        trace(`The message is ${e.data}`)
+        debug(`The message is ${e.data}`)
 
         if (is_msg_notification(msg)) {
             // Sometimes we can receive notification responses before we receive the live query response?
@@ -276,14 +291,13 @@ function on_msg_live_query(ws, state, e) {
             return EMPTY_MESSAGE
         } else {
             // Since we are assuming that the test is linear, we aren't going to receive another message
-            end_test(ws, state)
-            fail(`Did not receive expected live query response: ${e.data}`)
-            abort("Booya live response")
+
+            end_test(ws, state, `Did not receive expected live query response: ${e.data}`)
         }
     }
 }
 
-function on_msg_creating_data(ws, state, e) {
+function on_msg_creating_data(ws, setup, state, e) {
     const burst = true;
     const burst_number = 50;
     const write_timeout_ms = 10000;
@@ -292,7 +306,9 @@ function on_msg_creating_data(ws, state, e) {
         if (burst) {
             debug(`Creating ${burst_number} requests`)
             for (let i=0; i<burst_number; i++) {
-                const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
+                const rnd = Math.floor(Math.random()*10000)
+                const req_id = `write_query_reqid_${rnd}_${run_id}`
+
                 state.pending_responses[req_id] = true;
             }
             for (const req_id of Object.keys(state.pending_responses)) {
@@ -316,7 +332,8 @@ function on_msg_creating_data(ws, state, e) {
             debug(`Creating poller for writes`)
             const write_interval = setInterval(() => {
                 debug(`Writing query`)
-                const req_id = "write_query_reqid_"+Math.floor(Math.random()*10000)
+                const rnd = Math.floor(Math.random()*10000)
+                const req_id = `write_query_reqid_${rnd}_${run_id}`
                 state.pending_responses[req_id] = true;
                 const send_msg =JSON.stringify({
                     id: req_id,
@@ -343,7 +360,7 @@ function on_msg_creating_data(ws, state, e) {
                 const send_msg = JSON.stringify({
                     id: "invoke-next-stage",
                     method: "query",
-                    params: ["INFO"], // TODO correct syntax or change to something easy
+                    params: ["INFO FOR DB"], // TODO correct syntax or change to something easy
                 })
                 state.debug_requests_responses.push(debug_req(send_msg))
                 ws.send(send_msg)
@@ -382,7 +399,7 @@ function on_msg_creating_data(ws, state, e) {
             const send_msg = JSON.stringify({
                 id: "invoke-next-stage-after-collecting-results",
                 method: "query",
-                params: ["INFO"], // TODO correct syntax or change to something easy
+                params: ["INFO FOR DB"], // TODO correct syntax or change to something easy
             })
             state.debug_requests_responses.push(debug_req(send_msg))
             ws.send(send_msg)
@@ -400,9 +417,9 @@ function is_msg_response(msg) {
         ("result" in msg.result)
 }
 
-function on_msg_cleanup(ws, state, e) {
+function on_msg_cleanup(ws, setup, state, e) {
     // TODO Kill Live Query
-    end_test(ws, state)
+    end_test(ws, state, undefined)
 }
 
 function end_test(ws, state, failmsg) {
@@ -424,6 +441,12 @@ function end_test(ws, state, failmsg) {
         clearTimeout(timeout)
         delete state.timeouts_to_kill[timeout]
     }
+    if (state.stage !== STATE_STAGE_TIMEOUT) {
+        debug("State wasnt timeout so cleared timeout")
+        clearTimeout(state.test_timeout)
+    } else {
+        debug("State was timeout, so didnt clear timeout")
+    }
     if (failmsg !== undefined) {
         fail(failmsg)
     }
@@ -431,6 +454,8 @@ function end_test(ws, state, failmsg) {
 
 // The main VU code
 export default function(setup) {
+    // Set the runid here, because otherwise the init step of k6 shares the value(??)
+    run_id = `runid-${Math.floor(Math.random()*10000)}-runid`
     debug("start")
     const ws = new WebSocket(`${base_url}`);
     // State describes the stage of the protocol
@@ -438,21 +463,24 @@ export default function(setup) {
     const state = generate_state()
     ws.onopen = () => {
         // Create and register state machine message handler
-        const handler = createOnMessageStateHandler(ws, state)
+        debug("connected")
+        const handler = createOnMessageStateHandler(ws, setup, state)
         ws.onmessage = handler
 
         // Invoke it immediately, because we need to fake an on-connect
-        handler({data: "{}"})
+        handler(EMPTY_MESSAGE)
     }
-    state.timeouts_to_kill[setTimeout(() => {
+    const test_timeout = setTimeout(() => {
         // This is a failsafe to terminate the connection in case the test runs too long
         const msg = label_log_str(`Test ran too long and has been terminated early, state=${JSON.stringify(state)}`, "INFO")
-        state.stage=STATE_STAGE_CLEANUP
+        state.stage=STATE_STAGE_TIMEOUT
         for (var i=0; i<state.debug_requests_responses.length; i++) {
             debug(`[${i}]: ${JSON.stringify(state.debug_requests_responses[i])}`)
         }
         debug("script failing scenario due to timeout")
         end_test(ws, state, msg)
-    }, sessDuration)] = true
+    }, sessDuration)
+    state.test_timeout = test_timeout;
     // The function will immediately end, but the "session" lasts for as long as the connection is open
+    // https://k6.io/docs/using-k6/protocols/websockets/
 }
