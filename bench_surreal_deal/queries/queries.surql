@@ -69,7 +69,7 @@ WHERE price < 1000;
 
 # Transaction - order from a new customer
 BEGIN TRANSACTION;
--- insert into the person table
+-- insert into the person table # use create 
 INSERT INTO person {
 	'id': 'person:⟨644ef4d0-423f-4446-95df-bc8b5b634874⟩',
 	'first_name': 'Karyl',
@@ -139,6 +139,7 @@ INSERT INTO product {
         'image_url': 'https://source.unsplash.com/1920x1080?'
         };
 
+# TODO do variation without create
 -- relate into the create table
 RELATE artist:⟨b8683656-6fe3-47ae-830c-41451c3ce953⟩ -> create -> product:⟨d8f59414-4484-4634-a866-8b607fd2311e⟩ CONTENT {
         created_at: time::now(),

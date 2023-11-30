@@ -201,17 +201,19 @@ artist = db["artist"]
 review = db["review"]
 
 # Insert data
-person.insert_many(person_data)
-print("person data loaded")
+person_insert = person.insert_many(person_data)
+print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
-product.insert_many(product_data)
-print("product data loaded")
+product_insert = product.insert_many(product_data)
+print(f"{len(product_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
-order.insert_many(order_data)
-print("order data loaded")
+order_insert = order.insert_many(order_data)
+print(f"{len(order_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
-artist.insert_many(artist_data)
-print("artist data loaded")
+artist_insert = artist.insert_many(artist_data)
+print(f"{len(artist_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
-review.insert_many(review_data)
-print("review data loaded")
+review_insert = review.insert_many(review_data)
+print(f"{len(review_insert.inserted_ids)} of {len(person_data)} documents inserted")
+
+client.close()

@@ -234,19 +234,19 @@ def insert_relate_statement(table_data:list[dict]) -> str:
 
 
 db.query(f"INSERT INTO person {person_data}")
-print("person data loaded")
+print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
 db.query(f"INSERT INTO product {product_data}")
-print("product data loaded")
+print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
 insert_relate_statement(order_data)
-print("order data loaded")
+print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
 db.query(f"INSERT INTO artist {artist_data}")
-print("artist data loaded")
+print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
 db.query(f"INSERT INTO review {review_data}")
-print("review data loaded")
+print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
 
 insert_relate_statement(create_data)
-print("create data loaded")
+print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
