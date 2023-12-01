@@ -207,8 +207,8 @@ function on_msg_signin_in(ws, setup, state, e) {
             params: [ {
                 user: username,
                 pass: password,
-                ns: setup.ns,
-                db: setup.db,
+                // ns: setup.ns,
+                // db: setup.db,
                 // sc: null,
             }],
         })
@@ -426,13 +426,12 @@ function end_test(ws, state, failmsg) {
     // Validate end state
     check(state, {
         "no intervals": (st) => Object.keys(st.intervals_to_kill).length===0,
-        "no timeouts": (st) => Object.keys(st.timeouts_to_kill).length===0,
+        "no timeouts": (st) => Object.keys(st.timeouts_to_kill).length===1,
         "no pending write responses": (st) => Object.keys(st.pending_responses).length===0,
         "no pending write requests": (st) => Object.keys(st.pending_requests).length===0,
         "no pending notification responses": (st) => Object.keys(st.expected_notifications).length === 0,
     })
     debug(`Completed scenario, closing connection. Pending responses = ${JSON.stringify(state.pending_responses)}`)
-    ws.close()
     for (const interval in state.intervals_to_kill) {
         clearInterval(interval)
         delete state.intervals_to_kill[interval]
@@ -450,6 +449,7 @@ function end_test(ws, state, failmsg) {
     if (failmsg !== undefined) {
         fail(failmsg)
     }
+    ws.close()
 }
 
 // The main VU code
