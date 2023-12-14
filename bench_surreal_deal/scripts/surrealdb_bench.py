@@ -233,20 +233,20 @@ def insert_relate_statement(table_data:list[dict]) -> str:
 # db.query(f"INSERT INTO person [{person_data}]") 
 
 
-db.query(f"INSERT INTO person {person_data}")
-print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
+person_insert = db.query(f"INSERT INTO person {person_data}")
+print(f"{len(person_insert)} of {len(person_data)} records inserted")
 
-db.query(f"INSERT INTO product {product_data}")
-print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
+product_insert = db.query(f"INSERT INTO product {product_data}")
+print(f"{len(product_insert)} of {len(product_data)} records inserted")
 
-insert_relate_statement(order_data)
-print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
+order_insert = insert_relate_statement(order_data)
+print(f" of {len(order_data)} records inserted")
 
-db.query(f"INSERT INTO artist {artist_data}")
-print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
+artist_insert = db.query(f"INSERT INTO artist {artist_data}")
+print(f"{len(artist_insert)} of {len(artist_data)} records inserted")
 
-db.query(f"INSERT INTO review {review_data}")
-print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
+review_insert = db.query(f"INSERT INTO review {review_data}")
+print(f"{len(review_insert)} of {len(review_data)} records inserted")
 
-insert_relate_statement(create_data)
-print(f"{len(person_insert.inserted_ids)} of {len(person_data)} documents inserted")
+create_insert = insert_relate_statement(create_data)
+print(f" of {len(create_data)} records inserted")

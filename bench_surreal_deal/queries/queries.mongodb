@@ -176,17 +176,20 @@ try {
 	})
 
 	// -- relate into the order table
-	// RELATE person:⟨644ef4d0-423f-4446-95df-bc8b5b634874⟩ -> order -> product:⟨00068999-b5e2-4a90-a1a2-e2469229c847⟩ CONTENT {
-	//         "currency": "£",
-	//         "discount": ->product.discount,
-	//         "order_date": time::now(),
-	//         "order_status": "pending",
-	//         "payment_method": "PayPal",
-	//         "price": ->product.price,
-	//         "product_name": ->product.name,
-	//         "quantity": 1,
-	//         "shipping_address": <-person.address
-	// 	};
+	db.order.insertOne({
+		"_id": UUID(),
+		"person": "d848be01-fd10-41ab-b861-87541b1373e6",
+		"product": "9e623dd7-0ac5-43c8-8597-26364e26a5a7",
+		'currency': '£',
+		'discount': db.product.distinct("discount", { "_id" : "9e623dd7-0ac5-43c8-8597-26364e26a5a7" }),
+		"order_date": new Date(),
+		"order_status": "pending",
+		"payment_method": "PayPal",
+		"price": db.product.distinct("price", { "_id" : "9e623dd7-0ac5-43c8-8597-26364e26a5a7" }),
+		"product_name": db.product.distinct("name", { "_id" : "9e623dd7-0ac5-43c8-8597-26364e26a5a7" }),
+		"quantity": 1,
+		"shipping_address": db.person.distinct("address", { "_id" : "d848be01-fd10-41ab-b861-87541b1373e6" })
+	});
 
 	// -- update the product table to reduce the quantity
 	db.product.updateOne(
