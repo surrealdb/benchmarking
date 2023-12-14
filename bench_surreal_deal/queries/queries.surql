@@ -89,7 +89,7 @@ INSERT INTO person {
 	};
 
 -- relate into the order table
-RELATE person:⟨644ef4d0-423f-4446-95df-bc8b5b634874⟩ -> order -> product:⟨00068999-b5e2-4a90-a1a2-e2469229c847⟩ CONTENT {
+RELATE person:⟨644ef4d0-423f-4446-95df-bc8b5b634874⟩ -> order:uuid() -> product:⟨00068999-b5e2-4a90-a1a2-e2469229c847⟩ CONTENT {
         "currency": "£",
         "discount": ->product.discount,
         "order_date": time::now(),
