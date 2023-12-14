@@ -232,7 +232,7 @@ try {
 	});
 
 	// -- insert into the product table
-	db.person.insertOne({
+	db.product.insertOne({
 		'_id': 'd8f59414-4484-4634-a866-8b607fd2311e',
 		'name': 'managed edt allocated pda',
 		'description': 'counseling dildo greek pan works interest xhtml wrong dennis available cl specific next tower webcam peace magic',
