@@ -1,0 +1,77 @@
+// db.order.find({'_id': "i8f59414-4484-4634-a866-8b607fd2311e"});
+// db.dropDatabase();
+
+// use('surreal_deal');
+// db.product.find({});
+
+
+
+	// -- relate into the order table
+	// RELATE person:⟨644ef4d0-423f-4446-95df-bc8b5b634874⟩ -> order -> product:⟨00068999-b5e2-4a90-a1a2-e2469229c847⟩ CONTENT {
+	//         "currency": "£",
+	//         "discount": ->product.discount,
+	//         "order_date": time::now(),
+	//         "order_status": "pending",
+	//         "payment_method": "PayPal",
+	//         "price": ->product.price,
+	//         "product_name": ->product.name,
+	//         "quantity": 1,
+	//         "shipping_address": <-person.address
+	// 	};
+
+
+// actually lets just do insert, with subqueries?
+db.order.insertOne({
+	"_id": UUID(),
+    "person": "644ef4d0-423f-4446-95df-bc8b5b634874",
+    "product": "00068999-b5e2-4a90-a1a2-e2469229c847",
+	'currency': '£',
+	'discount': ->product.discount,
+	"order_date": new Date(),
+	"order_status": "pending",
+	"payment_method": "PayPal",
+	"price": ->product.price,
+	"product_name": ->product.name,
+	"quantity": 1,
+	"shipping_address": <-person.address
+});
+
+
+// from product join field from person and insert into order
+
+use('surreal_deal');
+db.order.find({});
+
+use('surreal_deal');
+db.product.aggregate([
+	{
+		"$lookup": {
+			"from": "person",
+			"localField": "person",
+			"foreignField": "_id",
+			"pipeline": [
+				{ "$project": { "_id": 1, "address": 1 } }
+			],
+			"as": "person",
+		}
+	},
+	{ "$project": { "_id": 1, "discount": 1, "price": 1, "name": 1, "person._id": 1, "person.address": 1 } }
+	// ,{
+	// 	"$merge" : {
+	// 		into: "order",
+	// 		// whenMatched:  [
+	// 		// 	{"$addFields" :
+	// 		// 		{
+	// 		// 			"currency": "£",
+	// 		// 			"order_date": new Date(),
+	// 		// 			"order_status": "pending",
+	// 		// 			"payment_method": "PayPal",
+	// 		// 			"quantity": 1
+	// 		// 		}
+	// 		// 	}
+	// 		// ],
+	// 		// whenNotMatched: "insert"
+	// 	}
+	// }
+])
+

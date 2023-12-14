@@ -2,4 +2,4 @@
 .venv
 .vscode
 __pycache__
-test.*
+test/
