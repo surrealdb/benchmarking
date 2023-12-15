@@ -1,6 +1,7 @@
 use('surreal_deal');
 
 // Selecting multiple fields from multiple tables using record links
+use('surreal_deal');
 db.review.aggregate([
 	{
 		"$lookup": {
