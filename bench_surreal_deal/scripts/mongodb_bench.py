@@ -1,7 +1,6 @@
-# %% [markdown]
-# ## Create the data
 
-# %%
+## Create the data
+
 # import required modules
 from mimesis.locales import Locale
 from mimesis.keys import maybe
@@ -13,22 +12,19 @@ f = Field(locale=Locale.EN_GB, seed=42)
 
 table_definition = {
     "person":{
-        "amount":1000
+        "amount":1000 *10
     },
     "product":{
-        "amount":1000
+        "amount":1000 *10
     },
     "order":{
-        "amount":10000,
+        "amount":10000 *10
     },
     "artist":{
-        "amount":500
+        "amount":500 *10
     },
     "review":{
-        "amount":2000
-    },
-    "create":{
-        "amount":1000
+        "amount":2000 *10
     }
 }
 
@@ -190,10 +186,8 @@ review_id_count = table_definition['review']['amount']-1
 
 print("review data created")
 
-# %% [markdown]
-# ## Load the data
+## Load the data
 
-# %%
 from pymongo import MongoClient
 from bson.binary import UuidRepresentation
 from datetime import datetime,timezone
@@ -211,43 +205,20 @@ order = db["order"]
 artist = db["artist"]
 review = db["review"]
 
-# %%
-%time
 person.insert_many(person_data)
 
-# %%
-%time
 product.insert_many(product_data)
 
-# %%
-%time
 order.insert_many(order_data)
 
-# %%
-%time
 artist.insert_many(artist_data)
 
-# %%
-%time
 review.insert_many(review_data)
 
-# %% [markdown]
-# ## Run the queries
+## Run the queries
 
-# %%
-from random import randint
-# getting just an array of ids to use for loops in some queries
-person_ids = person.distinct("_id")
-product_ids = product.distinct("_id")
-order_ids = order.distinct("_id")
-artist_ids = artist.distinct("_id")
-review_ids = review.distinct("_id")
+### Q1: lookup vs record links
 
-# %% [markdown]
-# ### Q1: lookup vs record links
-
-# %%
-%%timeit
 list(review.aggregate([
 	{
 		"$lookup": {
@@ -286,11 +257,9 @@ list(review.aggregate([
 	}
 ]))
 
-# %% [markdown]
-# ### Q2: lookup vs graph
 
-# %%
-%%timeit
+### Q2: lookup vs graph
+
 list(order.aggregate([
 	{
 		"$lookup": {
@@ -328,21 +297,22 @@ list(order.aggregate([
 	{ "$project": { "_id": 0, "price": 1, "order_date": 1, "product_name": 1, "artist": 1, "person": 1, "product": 1 } }
 ]))
 
-# %% [markdown]
-# ### Q3: Name and email for all customers in England
 
-# %%
-%%timeit
+### Q3: Name and email for all customers in England
+
+person.create_index({"address.country": 1})
+
 list(person.find(
 	{ "address.country": "England" },
 	{ "_id": 0, "name": 1, "email": 1 }
 ))
 
-# %% [markdown]
-# ### Q4: Count the number of confirmed orders in Q1 by artists in England
 
-# %%
-%%timeit
+### Q4: Count the number of confirmed orders in Q1 by artists in England
+
+# TODO make sure the number of orders is consistent with SurrealDB one
+# TODO this probably needs an index somehow if possible
+
 list(order.aggregate([
 	{
 		"$lookup": {
@@ -376,27 +346,23 @@ list(order.aggregate([
 	{ "$count": "count" }
 ]))
 
-# %% [markdown]
-# ### Q5: Delete a specific review
 
-# %%
-%time
-review.delete_one({ "_id": review_ids[0] })
+### Q5: Delete a specific review
+# TODO add static UUID
 
-# %% [markdown]
-# ### Q6: Delete reviews from a particular category
+review.delete_one({ "_id": "UUID" })
 
-# %%
-%time
+
+### Q6: Delete reviews from a particular category
+# TODO add index on Category to speed this up? use explain in the distinct query
+
 review.delete_many({ "product": { "$in": product.distinct("_id", { "category": "charcoal" }) } })
 
-# %% [markdown]
-# ### Q7: Update a customer address
+### Q7: Update a customer address
+# TODO add static UUID
 
-# %%
-%%timeit
 person.update_one(
-	{ "_id": person_ids[randint(0, person_id_count)] },
+	{ "_id": "UUID" },
 	{
 		"$set": {
 			"address": {
@@ -411,28 +377,27 @@ person.update_one(
 	}
 )
 
-# %% [markdown]
-# ### Q8: Update discounts for products 
+### Q8: Update discounts for products
 
-# %%
-%time
+product.create_index({"price": 1})
+
 product.update_many(
 	{ "price": { "$lt": 1000 } },
 	{ "$set": { "discount": 0.2 } }
 )
 
-# %% [markdown]
-# ### Q9: "Transaction"* order from a new customer
 
-# %%
-%%timeit
+### Q9: "Transaction"* order from a new customer
+
 # Transaction - order from a new customer
+# TODO add static UUID
+# TODO make with_transactions version for distributed test
 
 new_person_id = uuid4()
-random_product_id = product_ids[randint(0, product_id_count)]
+product_id = "UUID"
 
 # insert into the person table
-db.person.insert_one({
+person.insert_one({
 		'_id': new_person_id,
 		'first_name': 'Karyl',
 		'last_name': 'Langley',
@@ -450,34 +415,32 @@ db.person.insert_one({
 		}
 	})
 
-# relate into the order table
-db.order.insert_one({
+# insert into the order table
+order.insert_one({
 	"_id": uuid4(),
 	"person": new_person_id,
-	"product": random_product_id,
+	"product": product_id,
 	'currency': '£',
-	'discount': db.product.distinct("discount", { "_id" : random_product_id }), 
+	'discount': db.product.distinct("discount", { "_id" : product_id }), 
 	"order_date": datetime.now(tz=timezone.utc),
 	"order_status": "pending",
 	"payment_method": "PayPal",
-	"price": db.product.distinct("price", { "_id" : random_product_id }),
-	"product_name": db.product.distinct("name", { "_id" : random_product_id }),
+	"price": db.product.distinct("price", { "_id" : product_id }),
+	"product_name": db.product.distinct("name", { "_id" : product_id }),
 	"quantity": 1,
 	"shipping_address": db.person.distinct("address", { "_id" : new_person_id })
 })
 
 # update the product table to reduce the quantity
-db.product.update_one(
-	{ "_id": random_product_id },
+product.update_one(
+	{ "_id": product_id },
 	{ "$inc": { "quantity": -1 } }
 )
 
-# %% [markdown]
-# ### Q10: "Transaction"* - New Artist creates their first product
+### Q10: "Transaction"* - New Artist creates their first product
 
-# %%
-%%timeit
 # Transaction - New Artist creates their first product
+# TODO make with_transactions version for distributed test
 
 new_artist_id = uuid4()
 
@@ -518,7 +481,6 @@ product.insert_one({
 	}
 })
 
-# %%
 client.close()
 
 
