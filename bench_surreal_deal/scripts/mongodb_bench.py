@@ -354,7 +354,8 @@ review.delete_one({ "_id": "UUID" })
 
 
 ### Q6: Delete reviews from a particular category
-# TODO add index on Category to speed this up? use explain in the distinct query
+
+product.create_index({"category": 1})
 
 review.delete_many({ "product": { "$in": product.distinct("_id", { "category": "charcoal" }) } })
 
