@@ -7,7 +7,7 @@ from mimesis.keys import maybe
 from mimesis.schema import Field, Schema
 from mimesis import Datetime
 
-dt = Datetime()
+dt = Datetime(seed=42)
 f = Field(locale=Locale.EN_GB, seed=42)
 
 table_definition = {
@@ -258,7 +258,7 @@ list(review.aggregate([
 ]))
 
 
-### Q2: lookup vs graph
+### Q2 A: lookup vs graph - one connection
 
 list(order.aggregate([
 	{
@@ -297,6 +297,44 @@ list(order.aggregate([
 	{ "$project": { "_id": 0, "price": 1, "order_date": 1, "product_name": 1, "artist": 1, "person": 1, "product": 1 } }
 ]))
 
+### Q2 B: lookup vs graph - two connections
+
+list(order.aggregate([
+	{
+		"$lookup": {
+			"from": "person",
+			"localField": "person",
+			"foreignField": "_id",
+			"pipeline": [
+				{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
+			],
+			"as": "person",
+		}
+	},
+	{
+		"$lookup": {
+			"from": "product",
+			"localField": "product",
+			"foreignField": "_id",
+			"pipeline": [
+				{
+					"$lookup": {
+						"from": "artist",
+						"localField": "artist",
+						"foreignField": "_id",
+						"pipeline": [
+							{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
+						],
+						"as": "artist",
+					}
+				},
+				{ "$project": { "_id": 0, "category": 1, "description": 1, "image_url": 1, "artist": 1 } }
+			],
+			"as": "product",
+		}
+	},
+	{ "$project": { "_id": 0, "price": 1, "order_date": 1, "product_name": 1, "artist": 1, "person": 1, "product": 1 } }
+]))
 
 ### Q3: Name and email for all customers in England
 
@@ -307,11 +345,26 @@ list(person.find(
 	{ "_id": 0, "name": 1, "email": 1 }
 ))
 
+### Q4: standard count
 
-### Q4: Count the number of confirmed orders in Q1 by artists in England
+# collection.count() is deprecated in PyMongo
+# collection.count_documents() is the replacement but is slow.
+# collection.estimated_document_count() is the fast version but might be wrong .
+# Sometimes that doesn't matter, but I think here it does since SurrelDB count() is exact.
+
+order.create_index({"order_date": 1, "order_status": 1})
+
+order.count_documents({
+	"order_status": { "$in": ['delivered', 'processing', 'shipped'] },
+	"$expr": { "$lt": ["$order_date", datetime(2023, 4, 1, 0, 0, 0, 0)]}
+})
+
+
+### Q5: count with a relationship (agg framework) - Count the number of confirmed orders in Q1 by artists in England
 
 # TODO make sure the number of orders is consistent with SurrealDB one
-# TODO this probably needs an index somehow if possible
+# TODO see if I can have the index also cover "product.artist.address.country"
+# Should I reduce to single $lookup? - people do nested though https://www.mongodb.com/community/forums/t/nested-lookup-aggregation/224456
 
 list(order.aggregate([
 	{
@@ -338,28 +391,27 @@ list(order.aggregate([
 	},
 	{
 		"$match": {
-			"$or": [{ "order_status": "null" }, { "order_status": { "$ne": "pending" } }],
-			"$expr": { "$lte": [{ "$month": "$order_date" }, 3] },
+            "order_status": { "$in": ['delivered', 'processing', 'shipped'] },
+            "$expr": { "$lt": ["$order_date", datetime(2023, 4, 1, 0, 0, 0, 0)]},
 			"product.artist.address.country": "England",
 		}
 	},
 	{ "$count": "count" }
 ]))
 
-
-### Q5: Delete a specific review
+### Q6: Delete a specific review
 # TODO add static UUID
 
 review.delete_one({ "_id": "UUID" })
 
 
-### Q6: Delete reviews from a particular category
+### Q7: Delete reviews from a particular category
 
 product.create_index({"category": 1})
 
 review.delete_many({ "product": { "$in": product.distinct("_id", { "category": "charcoal" }) } })
 
-### Q7: Update a customer address
+### Q8: Update a customer address
 # TODO add static UUID
 
 person.update_one(
@@ -378,7 +430,7 @@ person.update_one(
 	}
 )
 
-### Q8: Update discounts for products
+### Q9: Update discounts for products
 
 product.create_index({"price": 1})
 
@@ -388,7 +440,7 @@ product.update_many(
 )
 
 
-### Q9: "Transaction"* order from a new customer
+### Q10: "Transaction"* order from a new customer
 
 # Transaction - order from a new customer
 # TODO add static UUID
@@ -438,7 +490,7 @@ product.update_one(
 	{ "$inc": { "quantity": -1 } }
 )
 
-### Q10: "Transaction"* - New Artist creates their first product
+### Q11: "Transaction"* - New Artist creates their first product
 
 # Transaction - New Artist creates their first product
 # TODO make with_transactions version for distributed test
