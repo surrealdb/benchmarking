@@ -10,6 +10,12 @@ from mimesis import Datetime
 dt = Datetime(seed=42)
 f = Field(locale=Locale.EN_GB, seed=42)
 
+from random import Random
+from uuid import UUID, uuid4
+
+rnd = Random()
+rnd.seed(10)
+
 table_definition = {
     "person":{
         "amount":1000 *10
@@ -32,11 +38,16 @@ table_definition = {
 
 ## person
 
+def generate_uuid4(amount):
+    return [UUID(int=rnd.getrandbits(128), version=4) for _ in range(amount)]
+
+person_id = generate_uuid4(table_definition['person']['amount'])
+
 def person_generator() -> dict:
     first_name = f('first_name')
     last_name = f('last_name')
     return {
-        "_id":f("uuid"),
+        "_id":person_id.pop(),
         "first_name":first_name,
         "last_name":last_name,
         "name":first_name + " " + last_name,
@@ -59,17 +70,19 @@ person_schema = Schema(
 )
 person_data = person_schema.create()
 
-person_id_count = table_definition['person']['amount']-1
+person_id_count = range(table_definition['person']['amount']-1)
 
 print("person data created")
 
 ## artist
 
+artist_id = generate_uuid4(table_definition['artist']['amount'])
+
 def artist_generator() -> dict:
     first_name = f("first_name")
     last_name = f("last_name")
     return {
-        "_id":f("uuid"), 
+        "_id":artist_id.pop(), 
         "first_name":first_name,
         "last_name":last_name,
         "name":first_name + " " + last_name,
@@ -93,26 +106,28 @@ artist_schema = Schema(
 
 artist_data = artist_schema.create()
 
-artist_id_count = table_definition['artist']['amount']-1
+artist_id_count = range(table_definition['artist']['amount']-1)
 
 print("artist data created")
 
 ## product
 
+product_id = generate_uuid4(table_definition['product']['amount'])
+
 def product_generator() -> dict:
     created_at = dt.datetime(start=2023, end=2023)
-    quantity = f('integer_number', start=0, end=20)
+    quantity = rnd.randint(1, 20)
     return {
-        "_id":f("uuid"),
+        "_id":product_id.pop(),
         "name":' '.join(f('words', quantity=2)),
-        "description":' '.join(f('words', quantity=f('integer_number', start=8, end=25))),
+        "description":' '.join(f('words', quantity=rnd.randint(8, 25))),
         "category":f('choice', items=["oil paint", "watercolor", "acrylic paint", "charcoal", "pencil", "ink", "pastel", "collage", "digital art", "mixed media"]),
         "price":f('price', minimum=500, maximum=25000),
         "currency":f('currency_symbol'),
         "discount":f('float_number', start=0.2, end=0.8, precision=1, key=maybe(None, probability=0.8)),
         "quantity":quantity, 
         "image_url":f('stock_image_url'),
-        "artist":artist_data[f('integer_number', start=0, end=artist_id_count)]['_id'],
+        "artist":artist_data[f('choice', items=artist_id_count)]['_id'],
         "creation_history": {
             "created_at":created_at,
             "quantity":quantity
@@ -126,26 +141,28 @@ product_schema = Schema(
 
 product_data = product_schema.create()
 
-product_id_count = table_definition['product']['amount']-1
+product_id_count = range(table_definition['product']['amount']-1)
 
 print("product data created")
 
 ## order
 
+order_id = generate_uuid4(table_definition['order']['amount'])
+
 def order_generator() -> dict:
-    person_number = f('integer_number', start=0, end=person_id_count)
-    product_number = f('integer_number', start=0, end=product_id_count)
+    person_number = f('choice', items=person_id_count)
+    product_number = f('choice', items=product_id_count)
     shipping_address = person_data[person_number]['address']
     order_date = dt.datetime(start=2023, end=2023)
     return {
-        "_id":f("uuid"),
+        "_id":order_id.pop(),
         "person":person_data[person_number]['_id'],
         "product":product_data[product_number]['_id'],
         "product_name":product_data[product_number]['name'],
         "currency":product_data[product_number]['currency'],
         "discount":product_data[product_number]['discount'],
         "price":product_data[product_number]['price'],
-        "quantity":f('integer_number', start=1, end=3),
+        "quantity": rnd.randint(1, 3),
         "order_date":order_date,
         "shipping_address":shipping_address,
         "payment_method":f('choice', items=['credit card','debit card', 'PayPal']),
@@ -159,20 +176,19 @@ order_schema = Schema(
 
 order_data = order_schema.create()
 
-order_id_count = table_definition['order']['amount']-1
-
 print("order data created")
 
-## review
+review_id = generate_uuid4(table_definition['review']['amount'])
 
+## review
 def review_generator() -> dict:
     return {
-        "_id":f("uuid"),
-        "person":person_data[f('integer_number', start=0, end=person_id_count)]['_id'],
-        "product":product_data[f('integer_number', start=0, end=product_id_count)]['_id'],
-        "artist":artist_data[f('integer_number', start=0, end=artist_id_count)]['_id'],
+        "_id":review_id.pop(),
+        "person":person_data[f('choice', items=person_id_count)]['_id'],
+        "product":product_data[f('choice', items=product_id_count)]['_id'],
+        "artist":artist_data[f('choice', items=artist_id_count)]['_id'],
         "rating":f('choice', items=[1,2,3,4,5]),
-        "review_text":' '.join(f('words', quantity=f('integer_number', start=8, end=50)))
+        "review_text":' '.join(f('words', quantity=rnd.randint(8, 50)))
     }
 
 review_schema = Schema(
@@ -182,8 +198,6 @@ review_schema = Schema(
 
 review_data = review_schema.create()
 
-review_id_count = table_definition['review']['amount']-1
-
 print("review data created")
 
 ## Load the data
@@ -191,7 +205,6 @@ print("review data created")
 from pymongo import MongoClient
 from bson.binary import UuidRepresentation
 from datetime import datetime,timezone
-from uuid import uuid4
 
 MONGODB_URI = "mongodb://localhost:27017/"
 
