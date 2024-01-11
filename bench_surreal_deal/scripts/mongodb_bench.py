@@ -182,13 +182,15 @@ review_id = generate_uuid4(table_definition['review']['amount'])
 
 ## review
 def review_generator() -> dict:
+    review_date = dt.datetime(start=2023, end=2023)
     return {
         "_id":review_id.pop(),
         "person":person_data[f('choice', items=person_id_count)]['_id'],
         "product":product_data[f('choice', items=product_id_count)]['_id'],
         "artist":artist_data[f('choice', items=artist_id_count)]['_id'],
         "rating":f('choice', items=[1,2,3,4,5]),
-        "review_text":' '.join(f('words', quantity=rnd.randint(8, 50)))
+        "review_text":' '.join(f('words', quantity=rnd.randint(8, 50))),
+        "review_date": review_date
     }
 
 review_schema = Schema(
@@ -230,43 +232,40 @@ review.insert_many(review_data)
 
 ## Run the queries
 
+## Q1-Q3 - comparing relationships, returning 3 fields from 3 tables (2x relationships)
+
 ### Q1: lookup vs record links
 
 list(review.aggregate([
 	{
 		"$lookup": {
-			"from": "artist",
-			"localField": "artist",
-			"foreignField": "_id",
-			"pipeline": [
-				{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
-			],
-			"as": "artist",
-		}
-
-	},
-	{
-		"$lookup": {
 			"from": "person",
 			"localField": "person",
 			"foreignField": "_id",
-			"pipeline": [
-				{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
-			],
 			"as": "person",
 		}
-
 	},
 	{
 		"$lookup": {
 			"from": "product",
 			"localField": "product",
 			"foreignField": "_id",
-			"pipeline": [
-				{ "$project": { "_id": 0, "name": 1, "category": 1, "price": 1 } }
-			],
 			"as": "product",
 		}
+	},
+    { 
+		"$project": { 
+		"_id": 0, 
+		"rating": 1, 
+		"review_text": 1, 
+		"review_date": 1, 
+		"person.name": 1,
+		"person.email": 1, 
+		"person.phone": 1, 
+		"product.name": 1,
+		"product.category": 1,
+		"product.image_url": 1 
+		} 
 	}
 ]))
 
@@ -279,9 +278,6 @@ list(order.aggregate([
 			"from": "person",
 			"localField": "person",
 			"foreignField": "_id",
-			"pipeline": [
-				{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
-			],
 			"as": "person",
 		}
 	},
@@ -290,42 +286,71 @@ list(order.aggregate([
 			"from": "product",
 			"localField": "product",
 			"foreignField": "_id",
-			"pipeline": [
-				{
-					"$lookup": {
-						"from": "artist",
-						"localField": "artist",
-						"foreignField": "_id",
-						"pipeline": [
-							{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
-						],
-						"as": "artist",
-					}
-				},
-				{ "$project": { "_id": 0, "category": 1, "description": 1, "image_url": 1, "artist": 1 } }
-			],
 			"as": "product",
 		}
 	},
-	{ "$project": { "_id": 0, "price": 1, "order_date": 1, "product_name": 1, "artist": 1, "person": 1, "product": 1 } }
+    { 
+        "$project": { 
+            "_id": 0, 
+            "price": 1, 
+            "order_date": 1, 
+            "product_name": 1,
+            "person.name": 1, 
+            "person.email": 1, 
+            "person.phone": 1,
+            "product.category": 1,
+            "product.description": 1,
+            "product.image_url": 1 
+        } 
+    }
 ]))
 
-### Q2 B: lookup vs graph - two connections
+### Q2 B: graphlookup vs graph - one connection
+# TODO have it trigger the index
+
+list(order.aggregate([
+    {
+        '$graphLookup': {
+            'from': 'person', 
+            'startWith': '$person', 
+            'connectFromField': 'person', 
+            'connectToField': '_id', 
+            'maxDepth': 0, 
+            'as': 'person'
+        }
+    }, 
+    {
+        '$graphLookup': {
+            'from': 'product', 
+            'startWith': '$product', 
+            'connectFromField': 'product', 
+            'connectToField': '_id', 
+            'maxDepth': 0, 
+            'as': 'product'
+        }
+    }, 
+    { 
+        "$project": { 
+            "_id": 0, 
+            "price": 1, 
+            "order_date": 1, 
+            "product_name": 1,
+            "person.name": 1, 
+            "person.email": 1, 
+            "person.phone": 1,
+            "product.category": 1,
+            "product.description": 1,
+            "product.image_url": 1 
+        } 
+    }
+]))
+
+### Q3 A: lookup vs graph - two connections
+# TODO index is not triggered
 
 list(order.aggregate([
 	{
 		"$lookup": {
-			"from": "person",
-			"localField": "person",
-			"foreignField": "_id",
-			"pipeline": [
-				{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
-			],
-			"as": "person",
-		}
-	},
-	{
-		"$lookup": {
 			"from": "product",
 			"localField": "product",
 			"foreignField": "_id",
@@ -335,21 +360,33 @@ list(order.aggregate([
 						"from": "artist",
 						"localField": "artist",
 						"foreignField": "_id",
-						"pipeline": [
-							{ "$project": { "_id": 0, "name": 1, "email": 1, "phone": 1 } }
-						],
 						"as": "artist",
 					}
 				},
-				{ "$project": { "_id": 0, "category": 1, "description": 1, "image_url": 1, "artist": 1 } }
 			],
 			"as": "product",
 		}
 	},
-	{ "$project": { "_id": 0, "price": 1, "order_date": 1, "product_name": 1, "artist": 1, "person": 1, "product": 1 } }
+	{ 
+        "$project": { 
+            "_id": 0, 
+            "price": 1, 
+            "order_date": 1, 
+            "product_name": 1,
+            "product.category": 1,
+            "product.description": 1,
+            "product.image_url": 1,
+			"product.artist.name": 1,
+			"product.artist.email": 1,
+			"product.artist.phone": 1,
+        } 
+    }
 ]))
 
-### Q3: Name and email for all customers in England
+### Q3 B: graphlookup vs graph - two connections
+
+
+### Q4: Name and email for all customers in England
 
 person.create_index({"address.country": 1})
 
@@ -358,14 +395,14 @@ list(person.find(
 	{ "_id": 0, "name": 1, "email": 1 }
 ))
 
-### Q4: standard count
+### Q5: standard count
 
 # collection.count() is deprecated in PyMongo
 # collection.count_documents() is the replacement but is slow.
 # collection.estimated_document_count() is the fast version but might be wrong .
 # Sometimes that doesn't matter, but I think here it does since SurrelDB count() is exact.
 
-order.create_index({"order_date": 1, "order_status": 1})
+order.create_index({"order_status": 1, "order_date": 1})
 
 order.count_documents({
 	"order_status": { "$in": ['delivered', 'processing', 'shipped'] },
@@ -373,9 +410,8 @@ order.count_documents({
 })
 
 
-### Q5: count with a relationship (agg framework) - Count the number of confirmed orders in Q1 by artists in England
+### Q6: count with a relationship (agg framework) - Count the number of confirmed orders in Q1 by artists in England
 
-# TODO make sure the number of orders is consistent with SurrealDB one
 # TODO see if I can have the index also cover "product.artist.address.country"
 # Should I reduce to single $lookup? - people do nested though https://www.mongodb.com/community/forums/t/nested-lookup-aggregation/224456
 
@@ -391,13 +427,9 @@ list(order.aggregate([
 						"from": "artist",
 						"localField": "artist",
 						"foreignField": "_id",
-						"pipeline": [
-							{ "$project": { "_id": 0, "address.country": 1 } }
-						],
 						"as": "artist",
 					}
 				},
-				{ "$project": { "_id": 0, "artist": 1 } }
 			],
 			"as": "product",
 		}
@@ -412,19 +444,32 @@ list(order.aggregate([
 	{ "$count": "count" }
 ]))
 
-### Q6: Delete a specific review
-# TODO add static UUID
+### Q7: Delete a specific review
 
-review.delete_one({ "_id": "UUID" })
+# TODO 
+delete_10_uuids = [
+    UUID('3e4b5caf-c52a-4010-b664-bddcc7767168'),
+    UUID('3e519815-ee9f-46d1-b134-7478ca4a761e'),
+    UUID('3e5e8004-32da-499c-b7b2-5dc9caa0ae8f'),
+    UUID('3e748d02-c70d-4955-9fdd-c43553e30b35'),
+    UUID('3e886e88-abd9-4923-8a57-8389799c1840'),
+    UUID('3ea31852-8979-4cb3-bfa1-035aa99de7a2'),
+    UUID('3ebde78a-7b41-42ac-b7e8-7f9ec7ba6ceb'),
+    UUID('3ec29563-1990-4f51-be0c-613aeb1ecab6'),
+    UUID('3f2b0773-6df7-4331-b848-1c3a6e3149d6'),
+    UUID('3f4c2391-b00c-4246-b277-00d4d3770a56')
+]
+
+review.delete_one({ "_id": delete_10_uuids.pop() })
 
 
-### Q7: Delete reviews from a particular category
+### Q8: Delete reviews from a particular category
 
 product.create_index({"category": 1})
 
 review.delete_many({ "product": { "$in": product.distinct("_id", { "category": "charcoal" }) } })
 
-### Q8: Update a customer address
+### Q9: Update a customer address
 # TODO add static UUID
 
 person.update_one(
@@ -443,7 +488,7 @@ person.update_one(
 	}
 )
 
-### Q9: Update discounts for products
+### Q10: Update discounts for products
 
 product.create_index({"price": 1})
 
@@ -453,7 +498,7 @@ product.update_many(
 )
 
 
-### Q10: "Transaction"* order from a new customer
+### Q11: "Transaction"* order from a new customer
 
 # Transaction - order from a new customer
 # TODO add static UUID
@@ -503,7 +548,7 @@ product.update_one(
 	{ "$inc": { "quantity": -1 } }
 )
 
-### Q11: "Transaction"* - New Artist creates their first product
+### Q12: "Transaction"* - New Artist creates their first product
 
 # Transaction - New Artist creates their first product
 # TODO make with_transactions version for distributed test
