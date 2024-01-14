@@ -10,21 +10,13 @@ from mimesis import Datetime
 from random import Random
 from uuid import UUID, uuid4
 
-from bench_utils import generate_uuid4, get_gen_uuid4_unique_list
-
-table_definition = {
-    "person_amount": 1000,
-    "product_amount": 1000,
-    "order_amount":10000,
-    "artist_amount": 500,
-    "review_amount":2000
-}
+from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition
 
 # create data
 
 ## person
 
-person_id = generate_uuid4(table_definition['person_amount'], 10)
+person_id = generate_uuid4(table_definition['person_amount'], seed=10)
 
 f = Field(locale=Locale.EN_GB, seed=10)
 
@@ -61,7 +53,7 @@ print("person data created")
 
 ## artist
 
-artist_id = generate_uuid4(table_definition['artist_amount'], 20)
+artist_id = generate_uuid4(table_definition['artist_amount'], seed=20)
 
 f = Field(locale=Locale.EN_GB, seed=20)
 
@@ -99,7 +91,7 @@ print("artist data created")
 
 ## product
 
-product_id = generate_uuid4(table_definition['product_amount'], 30)
+product_id = generate_uuid4(table_definition['product_amount'], seed=30)
 
 f = Field(locale=Locale.EN_GB, seed=30)
 dt = Datetime(seed=30)
@@ -140,7 +132,7 @@ print("product data created")
 
 ## order
 
-order_id = generate_uuid4(table_definition['order_amount'], 40)
+order_id = generate_uuid4(table_definition['order_amount'], seed=40)
 
 f = Field(locale=Locale.EN_GB, seed=40)
 dt = Datetime(seed=40)
@@ -179,7 +171,7 @@ print("order data created")
 
 ## review
 
-review_id = generate_uuid4(table_definition['review_amount'], 50)
+review_id = generate_uuid4(table_definition['review_amount'], seed=50)
 
 f = Field(locale=Locale.EN_GB, seed=50)
 dt = Datetime(seed=50)
@@ -217,6 +209,10 @@ from datetime import datetime,timezone
 MONGODB_URI = "mongodb://localhost:27017/"
 
 client = MongoClient(MONGODB_URI, uuidRepresentation='standard')
+
+# in case it exists drop the database
+client.drop_database('surreal_deal')
+
 db = client["surreal_deal"]
 
 # Create collections
@@ -454,22 +450,9 @@ list(order.aggregate([
 
 ### Q7: Delete a specific review
 
-# TODO select random ids?
-delete_10_uuids = [
-    UUID('3e4b5caf-c52a-4010-b664-bddcc7767168'),
-    UUID('3e519815-ee9f-46d1-b134-7478ca4a761e'),
-    UUID('3e5e8004-32da-499c-b7b2-5dc9caa0ae8f'),
-    UUID('3e748d02-c70d-4955-9fdd-c43553e30b35'),
-    UUID('3e886e88-abd9-4923-8a57-8389799c1840'),
-    UUID('3ea31852-8979-4cb3-bfa1-035aa99de7a2'),
-    UUID('3ebde78a-7b41-42ac-b7e8-7f9ec7ba6ceb'),
-    UUID('3ec29563-1990-4f51-be0c-613aeb1ecab6'),
-    UUID('3f2b0773-6df7-4331-b848-1c3a6e3149d6'),
-    UUID('3f4c2391-b00c-4246-b277-00d4d3770a56')
-]
+review_ids_for_deletion = get_gen_uuid4_unique_list(total_num=table_definition['review_amount'], list_num=10, seed=50)
 
-review.delete_one({ "_id": delete_10_uuids.pop() })
-
+review.delete_one({ "_id": review_ids_for_deletion.pop() })
 
 ### Q8: Delete reviews from a particular category
 
@@ -478,10 +461,11 @@ product.create_index({"category": 1})
 review.delete_many({ "product": { "$in": product.distinct("_id", { "category": "charcoal" }) } })
 
 ### Q9: Update a customer address
-# TODO add static UUID
+
+person_ids_for_update = get_gen_uuid4_unique_list(total_num=table_definition['person_amount'], list_num=10, seed=10)
 
 person.update_one(
-	{ "_id": "UUID" },
+	{ "_id": person_ids_for_update.pop() },
 	{
 		"$set": {
 			"address": {
@@ -509,11 +493,13 @@ product.update_many(
 ### Q11: "Transaction"* order from a new customer
 
 # Transaction - order from a new customer
-# TODO add static UUID
 # TODO make with_transactions version for distributed test
 
 new_person_id = uuid4()
-product_id = "UUID"
+
+product_ids_for_insert_and_update = get_gen_uuid4_unique_list(total_num=table_definition['person_amount'], list_num=10, seed=10)
+
+product_id = product_ids_for_insert_and_update.pop()
 
 # insert into the person table
 person.insert_one({
