@@ -7,47 +7,32 @@ from mimesis.keys import maybe
 from mimesis.schema import Field, Schema
 from mimesis import Datetime
 
-dt = Datetime(seed=42)
-f = Field(locale=Locale.EN_GB, seed=42)
-
 from random import Random
 from uuid import UUID, uuid4
 
-rnd = Random()
-rnd.seed(10)
+from bench_utils import generate_uuid4, get_gen_uuid4_unique_list
 
 table_definition = {
-    "person":{
-        "amount":1000 *10
-    },
-    "product":{
-        "amount":1000 *10
-    },
-    "order":{
-        "amount":10000 *10
-    },
-    "artist":{
-        "amount":500 *10
-    },
-    "review":{
-        "amount":2000 *10
-    }
+    "person_amount": 1000,
+    "product_amount": 1000,
+    "order_amount":10000,
+    "artist_amount": 500,
+    "review_amount":2000
 }
 
 # create data
 
 ## person
 
-def generate_uuid4(amount):
-    return [UUID(int=rnd.getrandbits(128), version=4) for _ in range(amount)]
+person_id = generate_uuid4(table_definition['person_amount'], 10)
 
-person_id = generate_uuid4(table_definition['person']['amount'])
+f = Field(locale=Locale.EN_GB, seed=10)
 
 def person_generator() -> dict:
     first_name = f('first_name')
     last_name = f('last_name')
     return {
-        "_id":person_id.pop(),
+        "_id":next(person_id),
         "first_name":first_name,
         "last_name":last_name,
         "name":first_name + " " + last_name,
@@ -66,23 +51,25 @@ def person_generator() -> dict:
 
 person_schema = Schema(
     schema=person_generator,
-    iterations=table_definition['person']['amount']
+    iterations=table_definition['person_amount']
 )
 person_data = person_schema.create()
 
-person_id_count = range(table_definition['person']['amount']-1)
+person_id_count = range(table_definition['person_amount']-1)
 
 print("person data created")
 
 ## artist
 
-artist_id = generate_uuid4(table_definition['artist']['amount'])
+artist_id = generate_uuid4(table_definition['artist_amount'], 20)
+
+f = Field(locale=Locale.EN_GB, seed=20)
 
 def artist_generator() -> dict:
     first_name = f("first_name")
     last_name = f("last_name")
     return {
-        "_id":artist_id.pop(), 
+        "_id":next(artist_id), 
         "first_name":first_name,
         "last_name":last_name,
         "name":first_name + " " + last_name,
@@ -101,24 +88,30 @@ def artist_generator() -> dict:
 
 artist_schema = Schema(
     schema=artist_generator,
-    iterations=table_definition['artist']['amount']
+    iterations=table_definition['artist_amount']
 )
 
 artist_data = artist_schema.create()
 
-artist_id_count = range(table_definition['artist']['amount']-1)
+artist_id_count = range(table_definition['artist_amount']-1)
 
 print("artist data created")
 
 ## product
 
-product_id = generate_uuid4(table_definition['product']['amount'])
+product_id = generate_uuid4(table_definition['product_amount'], 30)
+
+f = Field(locale=Locale.EN_GB, seed=30)
+dt = Datetime(seed=30)
+
+rnd = Random()
+rnd.seed(30)
 
 def product_generator() -> dict:
     created_at = dt.datetime(start=2023, end=2023)
     quantity = rnd.randint(1, 20)
     return {
-        "_id":product_id.pop(),
+        "_id":next(product_id),
         "name":' '.join(f('words', quantity=2)),
         "description":' '.join(f('words', quantity=rnd.randint(8, 25))),
         "category":f('choice', items=["oil paint", "watercolor", "acrylic paint", "charcoal", "pencil", "ink", "pastel", "collage", "digital art", "mixed media"]),
@@ -136,18 +129,24 @@ def product_generator() -> dict:
 
 product_schema = Schema(
     schema=product_generator,
-    iterations=table_definition['product']['amount']
+    iterations=table_definition['product_amount']
 )
 
 product_data = product_schema.create()
 
-product_id_count = range(table_definition['product']['amount']-1)
+product_id_count = range(table_definition['product_amount']-1)
 
 print("product data created")
 
 ## order
 
-order_id = generate_uuid4(table_definition['order']['amount'])
+order_id = generate_uuid4(table_definition['order_amount'], 40)
+
+f = Field(locale=Locale.EN_GB, seed=40)
+dt = Datetime(seed=40)
+
+rnd = Random()
+rnd.seed(40)
 
 def order_generator() -> dict:
     person_number = f('choice', items=person_id_count)
@@ -155,7 +154,7 @@ def order_generator() -> dict:
     shipping_address = person_data[person_number]['address']
     order_date = dt.datetime(start=2023, end=2023)
     return {
-        "_id":order_id.pop(),
+        "_id":next(order_id),
         "person":person_data[person_number]['_id'],
         "product":product_data[product_number]['_id'],
         "product_name":product_data[product_number]['name'],
@@ -171,20 +170,27 @@ def order_generator() -> dict:
 
 order_schema = Schema(
     schema=order_generator,
-    iterations=table_definition['order']['amount']
+    iterations=table_definition['order_amount']
 )
 
 order_data = order_schema.create()
 
 print("order data created")
 
-review_id = generate_uuid4(table_definition['review']['amount'])
-
 ## review
+
+review_id = generate_uuid4(table_definition['review_amount'], 50)
+
+f = Field(locale=Locale.EN_GB, seed=50)
+dt = Datetime(seed=50)
+
+rnd = Random()
+rnd.seed(50)
+
 def review_generator() -> dict:
     review_date = dt.datetime(start=2023, end=2023)
     return {
-        "_id":review_id.pop(),
+        "_id":next(review_id),
         "person":person_data[f('choice', items=person_id_count)]['_id'],
         "product":product_data[f('choice', items=product_id_count)]['_id'],
         "artist":artist_data[f('choice', items=artist_id_count)]['_id'],
@@ -195,7 +201,7 @@ def review_generator() -> dict:
 
 review_schema = Schema(
     schema=review_generator,
-    iterations=table_definition['review']['amount']
+    iterations=table_definition['review_amount']
 )
 
 review_data = review_schema.create()
@@ -306,7 +312,9 @@ list(order.aggregate([
 ]))
 
 ### Q2 B: graphlookup vs graph - one connection
-# TODO have it trigger the index
+# note - not possible with index?
+# documentation doesn't say and have tried everything
+# anyway have index on ids by default
 
 list(order.aggregate([
     {
@@ -345,8 +353,9 @@ list(order.aggregate([
     }
 ]))
 
-### Q3 A: lookup vs graph - two connections
+### Q3: lookup vs graph - two connections
 # TODO index is not triggered
+# might work with $unwind?
 
 list(order.aggregate([
 	{
@@ -383,9 +392,6 @@ list(order.aggregate([
     }
 ]))
 
-### Q3 B: graphlookup vs graph - two connections
-
-
 ### Q4: Name and email for all customers in England
 
 person.create_index({"address.country": 1})
@@ -399,8 +405,9 @@ list(person.find(
 
 # collection.count() is deprecated in PyMongo
 # collection.count_documents() is the replacement but is slow.
-# collection.estimated_document_count() is the fast version but might be wrong .
+# collection.estimated_document_count() is the fast version but might be wrong.
 # Sometimes that doesn't matter, but I think here it does since SurrelDB count() is exact.
+# also collection.estimated_document_count() gave wrong result in my tests
 
 order.create_index({"order_status": 1, "order_date": 1})
 
@@ -412,7 +419,6 @@ order.count_documents({
 
 ### Q6: count with a relationship (agg framework) - Count the number of confirmed orders in Q1 by artists in England
 
-# TODO see if I can have the index also cover "product.artist.address.country"
 # Should I reduce to single $lookup? - people do nested though https://www.mongodb.com/community/forums/t/nested-lookup-aggregation/224456
 
 list(order.aggregate([
@@ -444,9 +450,11 @@ list(order.aggregate([
 	{ "$count": "count" }
 ]))
 
+
+
 ### Q7: Delete a specific review
 
-# TODO 
+# TODO select random ids?
 delete_10_uuids = [
     UUID('3e4b5caf-c52a-4010-b664-bddcc7767168'),
     UUID('3e519815-ee9f-46d1-b134-7478ca4a761e'),
