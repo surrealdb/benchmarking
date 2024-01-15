@@ -1,3 +1,5 @@
+## Create the data
+
 # import required modules
 from mimesis.locales import Locale
 from mimesis.keys import maybe
@@ -5,42 +7,24 @@ from mimesis.schema import Field, Schema
 from mimesis.enums import TimestampFormat
 from mimesis import Datetime
 
-dt = Datetime()
-f = Field(locale=Locale.EN_GB, seed=42)
+from random import Random
+from uuid import UUID, uuid4
 
-
-# Add table definitions
-
-table_definition = {
-    "person":{
-        "amount":1000
-    },
-    "product":{
-        "amount":1000
-    },
-    "order":{
-        "amount":10000
-    },
-    "artist":{
-        "amount":500
-    },
-    "review":{
-        "amount":2000
-    },
-    "create":{
-        "amount":1000 # should be same as product
-    }
-}
+from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition
 
 # Create table data
 
 ## person
 
+person_id = generate_uuid4(table_definition['person_amount'], seed=10)
+
+f = Field(locale=Locale.EN_GB, seed=10)
+
 def person_generator() -> dict:
     first_name = f('first_name')
     last_name = f('last_name')
     return {
-        "id":"person:"+f"⟨{f('uuid')}⟩",
+        "id":"person:"+f"⟨{str(next(person_id))}⟩",
         "first_name":first_name,
         "last_name":last_name,
         "name":first_name + " " + last_name,
@@ -59,78 +43,25 @@ def person_generator() -> dict:
 
 person_schema = Schema(
     schema=person_generator,
-    iterations=table_definition['person']['amount']
+    iterations=table_definition['person_amount']
 )
 person_data = person_schema.create()
 
-person_record_id_count = len(person_data)-1
+person_id_count = range(table_definition['person_amount']-1)
 
 print("person data created")
 
-## product
-
-def product_generator() -> dict:
-    return {
-        "id":"product:"+f"⟨{f('uuid')}⟩",
-        "name":' '.join(f('words', quantity=2)),
-        "description":' '.join(f('words', quantity=f('integer_number', start=8, end=25))),
-        "category":f('choice', items=["oil paint", "watercolor", "acrylic paint", "charcoal", "pencil", "ink", "pastel", "collage", "digital art", "mixed media"]),
-        "price":f('price', minimum=500, maximum=25000),
-        "currency":f('currency_symbol'),
-        "discount":f('float_number', start=0.2, end=0.8, precision=1, key=maybe(None, probability=0.8)),
-        "quantity":f('integer_number', start=0, end=20), 
-        "image_url":f('stock_image_url')
-    }
-
-product_schema = Schema(
-    schema=product_generator,
-    iterations=table_definition['product']['amount']
-)
-
-product_data = product_schema.create()
-
-product_record_id_count = len(product_data)-1
-
-print("product data created")
-
-## order
-
-def order_generator() -> dict:
-    person_number = f('integer_number', start=0, end=person_record_id_count)
-    product_number = f('integer_number', start=0, end=product_record_id_count)
-    shipping_address = person_data[person_number]['address']
-    order_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
-    return {
-        "id":f"order:"+f"⟨{f('uuid')}⟩",
-        "in":person_data[person_number]['id'],
-        "out":product_data[product_number]['id'],
-        "product_name":product_data[product_number]['name'],
-        "currency":product_data[product_number]['currency'],
-        "discount":product_data[product_number]['discount'],
-        "price":product_data[product_number]['price'],
-        "quantity":f('integer_number', start=1, end=3),
-        "order_date":order_date,
-        "shipping_address":shipping_address,
-        "payment_method":f('choice', items=['credit card','debit card', 'PayPal']),
-        "order_status":f('choice', items=['pending','processing', 'shipped', 'delivered'], key=maybe(None, probability=0.1))
-    }
-
-order_schema = Schema(
-    schema=order_generator,
-    iterations=table_definition['order']['amount']
-)
-
-order_data = order_schema.create()
-
-print("order data created")
-
 ## artist
+
+artist_id = generate_uuid4(table_definition['artist_amount'], seed=20)
+
+f = Field(locale=Locale.EN_GB, seed=20)
 
 def artist_generator() -> dict:
     first_name = f("first_name")
     last_name = f("last_name")
     return {
-        "id":"artist:"+f"⟨{f('uuid')}⟩",
+        "id":"artist:"+f"⟨{str(next(artist_id))}⟩",
         "first_name":first_name,
         "last_name":last_name,
         "name":first_name + " " + last_name,
@@ -150,61 +81,127 @@ def artist_generator() -> dict:
 
 artist_schema = Schema(
     schema=artist_generator,
-    iterations=table_definition['artist']['amount']
+    iterations=table_definition['artist_amount']
 )
 
 artist_data = artist_schema.create()
 
-artist_record_id_count = len(artist_data)-1
+artist_id_count = range(table_definition['artist_amount']-1)
 
 print("artist data created")
 
+## product 
+
+product_id = generate_uuid4(table_definition['product_amount'], seed=30)
+
+f = Field(locale=Locale.EN_GB, seed=30)
+dt = Datetime(seed=30)
+
+rnd = Random()
+rnd.seed(30)
+
+def product_generator() -> dict:
+    created_at = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+'Z'
+    quantity = rnd.randint(1, 20)
+    return {
+        "id":"product:"+f"⟨{str(next(product_id))}⟩",
+        "name":' '.join(f('words', quantity=2)),
+        "description":' '.join(f('words', quantity=rnd.randint(8, 25))),
+        "category":f('choice', items=["oil paint", "watercolor", "acrylic paint", "charcoal", "pencil", "ink", "pastel", "collage", "digital art", "mixed media"]),
+        "price":f('price', minimum=500, maximum=25000),
+        "currency":f('currency_symbol'),
+        "discount":f('float_number', start=0.2, end=0.8, precision=1, key=maybe(None, probability=0.8)),
+        "quantity":rnd.randint(1, 20), 
+        "image_url":f('stock_image_url'),
+        "artist":artist_data[f('choice', items=artist_id_count)]['id'],
+        "creation_history": {
+            "created_at":created_at,
+            "quantity":quantity
+        }
+    }
+
+product_schema = Schema(
+    schema=product_generator,
+    iterations=table_definition['product_amount']
+)
+
+product_data = product_schema.create()
+
+product_id_count = range(table_definition['product_amount']-1)
+
+print("product data created")
+
+## order
+
+order_id = generate_uuid4(table_definition['order_amount'], seed=40)
+
+f = Field(locale=Locale.EN_GB, seed=40)
+dt = Datetime(seed=40)
+
+rnd = Random()
+rnd.seed(40)
+
+def order_generator() -> dict:
+    person_number = f('choice', items=person_id_count)
+    product_number = f('choice', items=product_id_count)
+    shipping_address = person_data[person_number]['address']
+    order_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+'Z'
+    return {
+        "id":f"order:"+f"⟨{str(next(order_id))}⟩",
+        "in":person_data[person_number]['id'],
+        "out":product_data[product_number]['id'],
+        "product_name":product_data[product_number]['name'],
+        "currency":product_data[product_number]['currency'],
+        "discount":product_data[product_number]['discount'],
+        "price":product_data[product_number]['price'],
+        "quantity":rnd.randint(1, 3),
+        "order_date":order_date,
+        "shipping_address":shipping_address,
+        "payment_method":f('choice', items=['credit card','debit card', 'PayPal']),
+        "order_status":f('choice', items=['pending','processing', 'shipped', 'delivered'], key=maybe(None, probability=0.1))
+    }
+
+order_schema = Schema(
+    schema=order_generator,
+    iterations=table_definition['order_amount']
+)
+
+order_data = order_schema.create()
+
+print("order data created")
+
 ## review
 
+review_id = generate_uuid4(table_definition['review_amount'], seed=50)
+
+f = Field(locale=Locale.EN_GB, seed=50)
+dt = Datetime(seed=50)
+
+rnd = Random()
+rnd.seed(50)
+
 def review_generator() -> dict:
+    review_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+'Z'
     return {
-        "id":"review:"+f"⟨{f('uuid')}⟩",
-        "person":person_data[f('integer_number', start=0, end=person_record_id_count)]['id'],
-        "product":product_data[f('integer_number', start=0, end=product_record_id_count)]['id'],
-        "artist":artist_data[f('integer_number', start=0, end=artist_record_id_count)]['id'],
+        "id":"review:"+f"⟨{str(next(review_id))}⟩",
+        "person":person_data[f('choice', items=person_id_count)]['id'],
+        "product":product_data[f('choice', items=product_id_count)]['id'],
+        "artist":artist_data[f('choice', items=artist_id_count)]['id'],
         "rating":f('choice', items=[1,2,3,4,5]),
-        "review_text":' '.join(f('words', quantity=f('integer_number', start=8, end=50)))
+        "review_text":' '.join(f('words', quantity=rnd.randint(8,50))),
+        "review_date": review_date
     }
 
 review_schema = Schema(
     schema=review_generator,
-    iterations=table_definition['review']['amount']
+    iterations=table_definition['review_amount']
 )
 
 review_data = review_schema.create()
 
 print("review data created")
 
-## create
-# TODO possibly take this one out and just do order->product->artist?
-# That would mean though that order is both an edge and a node.. but would make querying more efficent
-def create_generator() -> dict:
-    product_number = f('increment')-1
-    artist_number = f('integer_number', start=0, end=artist_record_id_count)
-    created_at = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
-    return {
-        "id":"create:"+f"⟨{f('uuid')}⟩",
-        "in":artist_data[artist_number]['id'],
-        "out":product_data[product_number]['id'],
-        "created_at":created_at,
-        "quantity":product_data[product_number]['quantity']
-    }
-
-create_schema = Schema(
-    schema=create_generator,
-    iterations=table_definition['create']['amount']
-)
-
-create_data = create_schema.create()
-
-print("create data created")
-
-# load data
+## Load the data
 
 from surrealdb import SurrealDB
 
@@ -229,24 +226,236 @@ def insert_relate_statement(table_data:list[dict]) -> str:
             )
 
 
-# TODO need to flag this as a bug, no error and doesn't insert data
-# db.query(f"INSERT INTO person [{person_data}]") 
+db.query(f"INSERT INTO person {person_data}")
+
+db.query(f"INSERT INTO product {product_data}")
+
+insert_relate_statement(order_data)
+
+db.query(f"INSERT INTO artist {artist_data}")
+
+db.query(f"INSERT INTO review {review_data}")
 
 
-person_insert = db.query(f"INSERT INTO person {person_data}")
-print(f"{len(person_insert)} of {len(person_data)} records inserted")
+## Run the queries
 
-product_insert = db.query(f"INSERT INTO product {product_data}")
-print(f"{len(product_insert)} of {len(product_data)} records inserted")
 
-order_insert = insert_relate_statement(order_data)
-print(f" of {len(order_data)} records inserted")
+### Q1: lookup vs record links
 
-artist_insert = db.query(f"INSERT INTO artist {artist_data}")
-print(f"{len(artist_insert)} of {len(artist_data)} records inserted")
+db.query(""" 
+SELECT
+    id,
+    rating,
+    review_text,
+	artist.name,
+	artist.email,
+	artist.phone,
+	person.name,
+	person.email,
+	person.phone,
+	product.name,
+	product.category,
+	product.price
+FROM review;
+""")
 
-review_insert = db.query(f"INSERT INTO review {review_data}")
-print(f"{len(review_insert)} of {len(review_data)} records inserted")
 
-create_insert = insert_relate_statement(create_data)
-print(f" of {len(create_data)} records inserted")
+### Q2 A: lookup vs graph (and link)
+
+db.query("""
+SELECT
+	price,
+	order_date,
+	product_name,
+	->product.category,
+	->product.description,
+	->product.image_url,
+	<-person.name,
+	<-person.email,
+	<-person.phone,
+	->product.artist.name,
+	->product.artist.email,
+	->product.artist.phone
+FROM order;
+""")
+
+### Q2 B: lookup vs graph - using in/out instead of arrow
+
+db.query(""" 
+SELECT
+	price,
+	order_date,
+	product_name,
+	out.category,
+	out.description,
+	out.image_url,
+	in.person.name,
+	in.person.email,
+	in.person.phone,
+	out.artist.name,
+	out.artist.email,
+	out.artist.phone
+FROM order;
+""")
+
+
+### Q3: Name and email for all customers in England
+
+db.query(""" 
+DEFINE INDEX person_country ON TABLE person COLUMNS address.country;
+""")
+
+db.query(""" 
+SELECT name, email 
+FROM person 
+WHERE address.country = "England";	
+""")
+
+### Q4: Count the number of confirmed orders in Q1 by artists in England
+
+db.query(""" 
+DEFINE INDEX order_count ON TABLE order COLUMNS order_status, order_date, address.country;
+""")
+
+db.query(""" 
+SELECT count() FROM order
+WHERE order_status IN ["delivered", "processing", "shipped"]
+AND time::month(<datetime>order_date) <4 
+AND ->product.artist.address.country ?= "England"
+GROUP ALL;
+""")
+
+
+### Q5: Delete a specific review
+# TODO
+db.query(f""" 
+DELETE {review_ids[0]};
+""")
+
+### Q6: Delete reviews from a particular category
+
+db.query(""" 
+DELETE review
+WHERE product.category = "charcoal";
+""")
+
+
+### Q7: Update a customer address
+# TODO
+
+db.query(f"UPDATE {person_ids[randint(0, person_id_count)]}"+"""
+SET address = {
+	'address_line_1': '497 Ballycander',
+	'address_line_2': None,
+	'city': 'Bromyard',
+	'country': 'Wales',
+	'post_code': 'ZX8N 4VJ',
+	'coordinates': [68.772592, -35.491877]
+	}
+RETURN NONE;
+""")
+
+### Q8: Update discounts for products
+
+db.query(""" 
+UPDATE product
+SET discount = 0.2
+WHERE price < 1000
+RETURN NONE;
+""")
+
+### Q9: Transaction - order from a new customer
+# TODO do this with record links to compare against mongo
+# TODO add ids
+
+random_person_id = person_ids[randint(0, person_id_count)]
+random_product_id = product_ids[randint(0, product_id_count)]
+
+db.query(""" 
+# Transaction - order from a new customer
+BEGIN TRANSACTION;
+-- insert into the person table
+CREATE person CONTENT {
+	"""+f"'id': {random_person_id},"+"""
+	'first_name': 'Karyl',
+	'last_name': 'Langley',
+	'name': 'Karyl Langley',
+	'company_name': None,
+	'email': 'dee1961@gmail.com',
+	'phone': '+44 47 3516 5895',
+	'address': {
+		'address_line_1': '510 Henalta',
+		'address_line_2': None,
+		'city': 'Lyme Regis',
+		'country': 'Northern Ireland',
+		'post_code': 'TO6Q 8CM',
+		'coordinates': [-34.345071, 118.564172]
+		}
+	};
+
+-- relate into the order table"""+
+f"RELATE {random_person_id} -> order:uuid() -> {random_product_id}"+"""
+CONTENT {
+        "currency": "£",
+        "discount": ->product.discount,
+        "order_date": time::now(),
+        "order_status": "pending",
+        "payment_method": "PayPal",
+        "price": ->product.price,
+        "product_name": ->product.name,
+        "quantity": 1,
+        "shipping_address": <-person.address
+	};
+
+-- update the product table to reduce the quantity"""+
+f"""
+UPDATE {random_product_id} SET quantity -= 1 RETURN NONE;
+COMMIT TRANSACTION;
+""")
+
+### Q10: "Transaction"* - New Artist creates their first product
+# Transaction - New Artist creates their first product
+
+new_artist_id = str(uuid4())
+new_product_id = str(uuid4())
+
+db.query(""" 
+BEGIN TRANSACTION;
+-- insert into the artist table
+CREATE artist CONTENT {"""+
+        f"'id': 'artist:⟨{new_artist_id}⟩',"+"""
+        'first_name': 'Anderson',
+        'last_name': 'West',
+        'name': 'Anderson West',
+        'company_name': 'Atkins(ws) (ATK)',
+        'email': 'six1933@gmail.com',
+        'phone': '056 5881 1126',
+        'address': {
+                'address_line_1': '639 Connaugh',
+                'address_line_2': None,
+                'city': 'Ripon',
+                'country': 'Scotland',
+                'post_code': 'CG3U 4TH',
+                'coordinates': [4.273648, -112.907273]
+                }
+        };
+
+-- insert into the product table
+CREATE product CONTENT {"""+
+        f"'id': 'product:⟨{new_product_id}⟩',"+"""
+        'name': 'managed edt allocated pda',
+        'description': 'counseling dildo greek pan works interest xhtml wrong dennis available cl specific next tower webcam peace magic',
+        'category': 'watercolor',
+        'price': 15735.96,
+        'currency': '£',
+        'discount': None,
+        'quantity': 1,
+        'image_url': 'https://source.unsplash.com/1920x1080?',"""
+        f"'artist': 'artist:⟨{new_artist_id}⟩',"+"""
+        "creation_history": {
+                "quantity": 1,
+                "created_at": time::now()
+                }       
+        };
+COMMIT TRANSACTION;
+""")
