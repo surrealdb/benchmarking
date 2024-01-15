@@ -1,8 +1,9 @@
 from random import Random
 from uuid import UUID
-import timeit
+import time
 import sys
 import math
+
 import numpy as np
 
 table_definition = {
@@ -131,3 +132,38 @@ def plot_box(data, nticks=5, maxima=True, outliers=True, debug=False):
     tick_width = len(str(ticks.max()))
 
     plot_vals(vals, step, ticks, out if outliers else None, " " * (tick_width // 2))
+
+def run_surrealdb_query(operation, query, iterations=1):
+    """
+    Run templated surrealdb queries
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = time.perf_counter_ns()
+
+		# query to be run
+        operation(query)
+
+        end_time = time.perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    return result_list
+
+
+def run_mongo_query(operation, pipeline, iterations=1):
+    """
+    Run templated pymongo queries
+    only works for certain queries, queries done individually in benchmark
+    just thought I'd keep it for if need it later.
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = time.perf_counter_ns()
+
+		# query to be run
+        list(operation(pipeline))
+
+        end_time = time.perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    return result_list
