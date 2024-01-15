@@ -43,6 +43,7 @@ db.review.aggregate([
 // .explain("executionStats")
 
 // Selecting multiple fields from multiple tables using graph
+use('surreal_deal');
 db.order.aggregate([
 	{
 		"$lookup": {
