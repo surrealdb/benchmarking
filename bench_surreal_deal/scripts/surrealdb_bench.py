@@ -239,6 +239,7 @@ db.query(f"INSERT INTO review {review_data}")
 
 ## Run the queries
 
+## Q1-Q3 - comparing relationships, returning 3 fields from 3 tables (2x relationships)
 
 ### Q1: lookup vs record links
 
@@ -247,20 +248,48 @@ SELECT
     id,
     rating,
     review_text,
-	artist.name,
-	artist.email,
-	artist.phone,
 	person.name,
 	person.email,
 	person.phone,
 	product.name,
 	product.category,
-	product.price
+	product.image_url
 FROM review;
 """)
 
+### Q2: lookup vs graph - one connection
 
-### Q2 A: lookup vs graph (and link)
+db.query("""
+SELECT
+	price,
+	order_date,
+	product_name,
+	<-person.name,
+	<-person.email,
+	<-person.phone,
+	->product.category,
+	->product.description,
+	->product.image_url
+FROM order;
+""")
+
+### Q2 variant: lookup vs graph - using in/out instead of arrow
+
+db.query(""" 
+SELECT
+	price,
+	order_date,
+	product_name,
+	in.person.name,
+	in.person.email,
+	in.person.phone,
+	out.category,
+	out.description,
+	out.image_url
+FROM order;
+""")
+
+### Q3: lookup vs graph (and link) - two connections
 
 db.query("""
 SELECT
@@ -270,36 +299,13 @@ SELECT
 	->product.category,
 	->product.description,
 	->product.image_url,
-	<-person.name,
-	<-person.email,
-	<-person.phone,
 	->product.artist.name,
 	->product.artist.email,
 	->product.artist.phone
 FROM order;
 """)
 
-### Q2 B: lookup vs graph - using in/out instead of arrow
-
-db.query(""" 
-SELECT
-	price,
-	order_date,
-	product_name,
-	out.category,
-	out.description,
-	out.image_url,
-	in.person.name,
-	in.person.email,
-	in.person.phone,
-	out.artist.name,
-	out.artist.email,
-	out.artist.phone
-FROM order;
-""")
-
-
-### Q3: Name and email for all customers in England
+### Q4: Name and email for all customers in England
 
 db.query(""" 
 DEFINE INDEX person_country ON TABLE person COLUMNS address.country;
@@ -311,11 +317,20 @@ FROM person
 WHERE address.country = "England";	
 """)
 
-### Q4: Count the number of confirmed orders in Q1 by artists in England
+### Q5: standard count
 
 db.query(""" 
-DEFINE INDEX order_count ON TABLE order COLUMNS order_status, order_date, address.country;
+DEFINE INDEX order_count ON TABLE order COLUMNS order_status, order_date;
 """)
+
+db.query(""" 
+SELECT count() FROM order
+WHERE order_status IN ["delivered", "processing", "shipped"]
+AND time::month(<datetime>order_date) <4 
+GROUP ALL;
+""")
+
+### Q6: Count the number of confirmed orders in Q1 by artists in England
 
 db.query(""" 
 SELECT count() FROM order
@@ -326,24 +341,33 @@ GROUP ALL;
 """)
 
 
-### Q5: Delete a specific review
-# TODO
+### Q7: Delete a specific review
+
+review_ids_for_deletion = get_gen_uuid4_unique_list(total_num=table_definition['review_amount'], list_num=10, seed=50)
+
 db.query(f""" 
-DELETE {review_ids[0]};
+DELETE {str(review_ids_for_deletion.pop())}
+RETURN NONE;
 """)
 
-### Q6: Delete reviews from a particular category
+### Q8: Delete reviews from a particular category
+
+# TODO check if this index would work
+db.query(""" 
+DEFINE INDEX product_category ON TABLE review COLUMNS product.category;
+""")
 
 db.query(""" 
 DELETE review
-WHERE product.category = "charcoal";
+WHERE product.category = "charcoal"
+RETURN NONE;
 """)
 
+### Q9: Update a customer address
 
-### Q7: Update a customer address
-# TODO
+person_ids_for_update = get_gen_uuid4_unique_list(total_num=table_definition['person_amount'], list_num=10, seed=10)
 
-db.query(f"UPDATE {person_ids[randint(0, person_id_count)]}"+"""
+db.query(f"UPDATE {str(person_ids_for_update.pop())}"+"""
 SET address = {
 	'address_line_1': '497 Ballycander',
 	'address_line_2': None,
@@ -355,7 +379,11 @@ SET address = {
 RETURN NONE;
 """)
 
-### Q8: Update discounts for products
+### Q10: Update discounts for products
+
+db.query(""" 
+DEFINE INDEX product_price ON TABLE product COLUMNS price;
+""")
 
 db.query(""" 
 UPDATE product
@@ -364,19 +392,21 @@ WHERE price < 1000
 RETURN NONE;
 """)
 
-### Q9: Transaction - order from a new customer
-# TODO do this with record links to compare against mongo
-# TODO add ids
+### Q11: Transaction - order from a new customer
+# TODO add variant with record links to compare directly against mongo
 
-random_person_id = person_ids[randint(0, person_id_count)]
-random_product_id = product_ids[randint(0, product_id_count)]
+new_person_id = str(uuid4())
+
+product_ids_for_insert_and_update = get_gen_uuid4_unique_list(total_num=table_definition['person_amount'], list_num=10, seed=10)
+
+product_id = str(product_ids_for_insert_and_update.pop())
 
 db.query(""" 
 # Transaction - order from a new customer
 BEGIN TRANSACTION;
 -- insert into the person table
 CREATE person CONTENT {
-	"""+f"'id': {random_person_id},"+"""
+	"""+f"'id': {new_person_id},"+"""
 	'first_name': 'Karyl',
 	'last_name': 'Langley',
 	'name': 'Karyl Langley',
@@ -391,10 +421,11 @@ CREATE person CONTENT {
 		'post_code': 'TO6Q 8CM',
 		'coordinates': [-34.345071, 118.564172]
 		}
-	};
+	}
+RETURN NONE;
 
--- relate into the order table"""+
-f"RELATE {random_person_id} -> order:uuid() -> {random_product_id}"+"""
+-- relate into the order table
+"""+f"RELATE {new_person_id} -> order:uuid() -> {product_id}"+"""
 CONTENT {
         "currency": "£",
         "discount": ->product.discount,
@@ -409,7 +440,7 @@ CONTENT {
 
 -- update the product table to reduce the quantity"""+
 f"""
-UPDATE {random_product_id} SET quantity -= 1 RETURN NONE;
+UPDATE {product_id} SET quantity -= 1 RETURN NONE;
 COMMIT TRANSACTION;
 """)
 
@@ -438,7 +469,8 @@ CREATE artist CONTENT {"""+
                 'post_code': 'CG3U 4TH',
                 'coordinates': [4.273648, -112.907273]
                 }
-        };
+        }
+RETURN NONE;
 
 -- insert into the product table
 CREATE product CONTENT {"""+
@@ -456,6 +488,7 @@ CREATE product CONTENT {"""+
                 "quantity": 1,
                 "created_at": time::now()
                 }       
-        };
+        }
+RETURN NONE;
 COMMIT TRANSACTION;
 """)

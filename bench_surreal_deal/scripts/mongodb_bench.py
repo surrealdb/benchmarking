@@ -272,7 +272,7 @@ list(review.aggregate([
 ]))
 
 
-### Q2 A: lookup vs graph - one connection
+### Q2: lookup vs graph - one connection
 
 list(order.aggregate([
 	{
@@ -307,7 +307,7 @@ list(order.aggregate([
     }
 ]))
 
-### Q2 B: graphlookup vs graph - one connection
+### Q2 variant: graphlookup vs graph - one connection
 # note - not possible with index?
 # documentation doesn't say and have tried everything I can think of
 # ids are indexed by default anyway, but doesn't seem to matter here
@@ -548,6 +548,7 @@ product.update_one(
 # TODO make with_transactions version for distributed test
 
 new_artist_id = uuid4()
+new_product_id = uuid4()
 
 # insert into the artist table
 artist.insert_one({
@@ -570,7 +571,7 @@ artist.insert_one({
 
 # insert into the product table
 product.insert_one({
-    '_id': uuid4(),
+    '_id': new_product_id,
     'name': 'managed edt allocated pda',
     'description': 'counseling dildo greek pan works interest xhtml wrong dennis available cl specific next tower webcam peace magic',
     'category': 'watercolor',
