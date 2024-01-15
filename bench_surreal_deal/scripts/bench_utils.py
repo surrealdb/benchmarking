@@ -1,5 +1,17 @@
 from random import Random
 from uuid import UUID
+import timeit
+import sys
+import math
+import numpy as np
+
+table_definition = {
+    "person_amount": 1000,
+    "product_amount": 1000,
+    "order_amount":10000,
+    "artist_amount": 500,
+    "review_amount":2000
+}
 
 def generate_uuid4(amount, seed=42):
     """Yields a generator object of pseudorandom uuids"""
@@ -38,3 +50,84 @@ def get_gen_uuid4_unique_list(total_num, list_num, seed=42):
             next(uuid_gen)
             num +=1
     return uuid_list
+
+
+def format_time(raw_time, unit="ms", precision=2):
+    """Return formatted time in selected unit"""
+
+    units = {"s": 1e+9, "ms": 1e+6, "us": 1e+3, "ns": 1}
+
+    selected_unit = units[unit]
+
+    converted_time = raw_time / selected_unit
+
+    if int(converted_time) == converted_time:
+        formatted_time = f"{int(converted_time)} {unit}"
+    else:
+        formatted_time = f"{round(converted_time, precision)} {unit}"
+
+    return formatted_time
+
+# plot_vals and plot_box adapted from here:
+# https://gitlab.com/Soha/termbox.py
+def plot_vals(vals, step, ticks, out, prefix):
+    i = -1
+    v = ticks[0]
+    print(prefix, end="")
+    while v < ticks[-1]:
+        if i == -1:
+            if out is not None and v < out[0] and v + step > out[0]:
+                print("+", end="")
+            elif v > vals[0]:
+                print("|", end="")
+            else:
+                print(" ", end="")
+        elif i == 0:
+            print("-", end="")
+        elif i < 3:
+            if v < vals[2] and v + step > vals[2]:  # Median is only one point
+                print(":", end="")
+            else:
+                print("=", end="")
+        elif i == 3:
+            if v >= vals[4] or v + step > ticks[-1]:
+                print("|", end="")
+            else:
+                print("-", end="")
+        if i == 4:
+            if out is not None and v < out[1] and v + step > out[1]:
+                print("+", end="")
+            else:
+                print(" ", end="")
+        elif v > vals[i + 1]:
+            i += 1
+
+        v += step
+    print("")
+
+def plot_box(data, nticks=5, maxima=True, outliers=True, debug=False):
+    box = [5, 25, 50, 75, 95]
+    df = np.array(data, dtype=np.float64)
+    vals = np.quantile(df, [x / 100 for x in box])
+    out = np.quantile(df, [0.01, 0.99])
+
+    if maxima:
+        lo, hi = (df.min(), df.max())
+    elif outliers:
+        lo, hi = (out[0], out[1])
+    else:
+        lo, hi = (vals.min(), vals.max())
+
+    ticks = np.unique(np.linspace(lo, math.ceil(hi), nticks, dtype=int))
+    # The step is the *width* of a character
+    step = (ticks.max() - ticks.min()) / 50
+
+    if debug:
+        print("step:", step)
+        print("vals:", vals)
+        print("ticks:", ticks)
+        print("out:", out)
+
+    tick_width = len(str(ticks.max()))
+
+    plot_vals(vals, step, ticks, out if outliers else None, " " * (tick_width // 2))

@@ -13,6 +13,8 @@ neo4j = "^5.11.0"
 surrealdb-beta = "^0.0.3"
 mimesis = "^11.1.0"
 ipykernel = "^6.26.0"
+pymongoexplain = "^1.2.0"
+numpy = "^1.26.3"
 
 
 [build-system]
