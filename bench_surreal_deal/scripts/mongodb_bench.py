@@ -1,6 +1,5 @@
-
 ## Create the data
-
+# %%
 # import required modules
 from mimesis.locales import Locale
 from mimesis.keys import maybe
@@ -221,7 +220,7 @@ product = db["product"]
 order = db["order"]
 artist = db["artist"]
 review = db["review"]
-
+# %%
 person.insert_many(person_data)
 
 product.insert_many(product_data)
@@ -233,7 +232,7 @@ artist.insert_many(artist_data)
 review.insert_many(review_data)
 
 ## Run the queries
-
+# %%
 ## Q1-Q3 - comparing relationships, returning 3 fields from 3 tables (2x relationships)
 
 ### Q1: lookup vs record links
@@ -271,7 +270,7 @@ list(review.aggregate([
 	}
 ]))
 
-
+# %%
 ### Q2: lookup vs graph - one connection
 
 list(order.aggregate([
@@ -306,7 +305,7 @@ list(order.aggregate([
         } 
     }
 ]))
-
+# %%
 ### Q2 variant: graphlookup vs graph - one connection
 # note - not possible with index?
 # documentation doesn't say and have tried everything I can think of
@@ -348,7 +347,7 @@ list(order.aggregate([
         } 
     }
 ]))
-
+# %%
 ### Q3: lookup vs graph - two connections
 # TODO index is not triggered
 # might work with $unwind?
@@ -387,16 +386,16 @@ list(order.aggregate([
         } 
     }
 ]))
-
+# %%
 ### Q4: Name and email for all customers in England
 
 person.create_index({"address.country": 1})
-
+# %%
 list(person.find(
 	{ "address.country": "England" },
 	{ "_id": 0, "name": 1, "email": 1 }
 ))
-
+# %%
 ### Q5: standard count
 
 # collection.count() is deprecated in PyMongo
@@ -406,13 +405,13 @@ list(person.find(
 # also collection.estimated_document_count() gave wrong result in my tests
 
 order.create_index({"order_status": 1, "order_date": 1})
-
+# %%
 order.count_documents({
 	"order_status": { "$in": ['delivered', 'processing', 'shipped'] },
 	"$expr": { "$lt": ["$order_date", datetime(2023, 4, 1, 0, 0, 0, 0)]}
 })
 
-
+# %%
 ### Q6: count with a relationship (agg framework) - Count the number of confirmed orders in Q1 by artists in England
 
 # TODO Should I reduce to single $lookup? - people do nested though https://www.mongodb.com/community/forums/t/nested-lookup-aggregation/224456
@@ -447,21 +446,21 @@ list(order.aggregate([
 ]))
 
 
-
+# %%
 ### Q7: Delete a specific review
 
 review_ids_for_deletion = get_gen_uuid4_unique_list(total_num=table_definition['review_amount'], list_num=10, seed=50)
 
 review.delete_one({ "_id": review_ids_for_deletion.pop() })
-
+# %%
 ### Q8: Delete reviews from a particular category
 
 product.create_index({"category": 1})
-
+# %%
 review.delete_many({ "product": { "$in": product.distinct("_id", { "category": "charcoal" }) } })
 
 ### Q9: Update a customer address
-
+# %%
 person_ids_for_update = get_gen_uuid4_unique_list(total_num=table_definition['person_amount'], list_num=10, seed=10)
 
 person.update_one(
@@ -479,17 +478,17 @@ person.update_one(
 		}
 	}
 )
-
+# %%
 ### Q10: Update discounts for products
 
 product.create_index({"price": 1})
-
+# %%
 product.update_many(
 	{ "price": { "$lt": 1000 } },
 	{ "$set": { "discount": 0.2 } }
 )
 
-
+# %%
 ### Q11: "Transaction"* order from a new customer
 
 # Transaction - order from a new customer

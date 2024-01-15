@@ -1,5 +1,5 @@
 ## Create the data
-
+# %%
 # import required modules
 from mimesis.locales import Locale
 from mimesis.keys import maybe
@@ -101,7 +101,7 @@ rnd = Random()
 rnd.seed(30)
 
 def product_generator() -> dict:
-    created_at = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+'Z'
+    created_at = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
     quantity = rnd.randint(1, 20)
     return {
         "id":"product:"+f"⟨{str(next(product_id))}⟩",
@@ -145,7 +145,7 @@ def order_generator() -> dict:
     person_number = f('choice', items=person_id_count)
     product_number = f('choice', items=product_id_count)
     shipping_address = person_data[person_number]['address']
-    order_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+'Z'
+    order_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
     return {
         "id":f"order:"+f"⟨{str(next(order_id))}⟩",
         "in":person_data[person_number]['id'],
@@ -181,7 +181,7 @@ rnd = Random()
 rnd.seed(50)
 
 def review_generator() -> dict:
-    review_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+'Z'
+    review_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
     return {
         "id":"review:"+f"⟨{str(next(review_id))}⟩",
         "person":person_data[f('choice', items=person_id_count)]['id'],
@@ -225,7 +225,7 @@ def insert_relate_statement(table_data:list[dict]) -> str:
     f"RELATE {table_data[table_record_id]['in']} -> {table_data[table_record_id]['id']} -> {table_data[table_record_id]['out']} CONTENT {record};"
             )
 
-
+# %%
 db.query(f"INSERT INTO person {person_data}")
 
 db.query(f"INSERT INTO product {product_data}")
@@ -236,18 +236,24 @@ db.query(f"INSERT INTO artist {artist_data}")
 
 db.query(f"INSERT INTO review {review_data}")
 
+db.query(""" 
+DEFINE INDEX _id_ ON TABLE person COLUMNS id;
+DEFINE INDEX _id_ ON TABLE product COLUMNS id;
+DEFINE INDEX _id_ ON TABLE artist COLUMNS id;
+DEFINE INDEX _id_ ON TABLE review COLUMNS id;
+""")
 
 ## Run the queries
-
+# %%
 ## Q1-Q3 - comparing relationships, returning 3 fields from 3 tables (2x relationships)
 
 ### Q1: lookup vs record links
 
 db.query(""" 
 SELECT
-    id,
     rating,
     review_text,
+    review_date,
 	person.name,
 	person.email,
 	person.phone,
@@ -256,7 +262,7 @@ SELECT
 	product.image_url
 FROM review;
 """)
-
+# %%
 ### Q2: lookup vs graph - one connection
 
 db.query("""
@@ -272,7 +278,7 @@ SELECT
 	->product.image_url
 FROM order;
 """)
-
+# %%
 ### Q2 variant: lookup vs graph - using in/out instead of arrow
 
 db.query(""" 
@@ -288,7 +294,7 @@ SELECT
 	out.image_url
 FROM order;
 """)
-
+# %%
 ### Q3: lookup vs graph (and link) - two connections
 
 db.query("""
@@ -304,32 +310,32 @@ SELECT
 	->product.artist.phone
 FROM order;
 """)
-
+# %%
 ### Q4: Name and email for all customers in England
 
 db.query(""" 
 DEFINE INDEX person_country ON TABLE person COLUMNS address.country;
 """)
-
+# %%
 db.query(""" 
 SELECT name, email 
 FROM person 
 WHERE address.country = "England";	
 """)
-
+# %%
 ### Q5: standard count
 
 db.query(""" 
 DEFINE INDEX order_count ON TABLE order COLUMNS order_status, order_date;
 """)
-
+# %%
 db.query(""" 
 SELECT count() FROM order
 WHERE order_status IN ["delivered", "processing", "shipped"]
 AND time::month(<datetime>order_date) <4 
 GROUP ALL;
 """)
-
+# %%
 ### Q6: Count the number of confirmed orders in Q1 by artists in England
 
 db.query(""" 
@@ -340,7 +346,7 @@ AND ->product.artist.address.country ?= "England"
 GROUP ALL;
 """)
 
-
+# %%
 ### Q7: Delete a specific review
 
 review_ids_for_deletion = get_gen_uuid4_unique_list(total_num=table_definition['review_amount'], list_num=10, seed=50)
@@ -349,14 +355,14 @@ db.query(f"""
 DELETE {str(review_ids_for_deletion.pop())}
 RETURN NONE;
 """)
-
+# %%
 ### Q8: Delete reviews from a particular category
 
 # TODO check if this index would work
 db.query(""" 
 DEFINE INDEX product_category ON TABLE review COLUMNS product.category;
 """)
-
+# %%
 db.query(""" 
 DELETE review
 WHERE product.category = "charcoal"
@@ -364,7 +370,7 @@ RETURN NONE;
 """)
 
 ### Q9: Update a customer address
-
+# %%
 person_ids_for_update = get_gen_uuid4_unique_list(total_num=table_definition['person_amount'], list_num=10, seed=10)
 
 db.query(f"UPDATE {str(person_ids_for_update.pop())}"+"""
@@ -378,20 +384,20 @@ SET address = {
 	}
 RETURN NONE;
 """)
-
+# %%
 ### Q10: Update discounts for products
 
 db.query(""" 
 DEFINE INDEX product_price ON TABLE product COLUMNS price;
 """)
-
+# %%
 db.query(""" 
 UPDATE product
 SET discount = 0.2
 WHERE price < 1000
 RETURN NONE;
 """)
-
+# %%
 ### Q11: Transaction - order from a new customer
 # TODO add variant with record links to compare directly against mongo
 
