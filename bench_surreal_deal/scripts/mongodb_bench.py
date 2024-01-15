@@ -10,7 +10,7 @@ from mimesis import Datetime
 from random import Random
 from uuid import UUID, uuid4
 
-from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition
+from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition, format_time
 
 # create data
 
@@ -309,8 +309,8 @@ list(order.aggregate([
 
 ### Q2 B: graphlookup vs graph - one connection
 # note - not possible with index?
-# documentation doesn't say and have tried everything
-# anyway have index on ids by default
+# documentation doesn't say and have tried everything I can think of
+# ids are indexed by default anyway, but doesn't seem to matter here
 
 list(order.aggregate([
     {
@@ -415,7 +415,7 @@ order.count_documents({
 
 ### Q6: count with a relationship (agg framework) - Count the number of confirmed orders in Q1 by artists in England
 
-# Should I reduce to single $lookup? - people do nested though https://www.mongodb.com/community/forums/t/nested-lookup-aggregation/224456
+# TODO Should I reduce to single $lookup? - people do nested though https://www.mongodb.com/community/forums/t/nested-lookup-aggregation/224456
 
 list(order.aggregate([
 	{
