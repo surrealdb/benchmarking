@@ -15,6 +15,7 @@ mimesis = "^11.1.0"
 ipykernel = "^6.26.0"
 pymongoexplain = "^1.2.0"
 numpy = "^1.26.3"
+# surrealdb-beta = {git = "https://github.com/surrealdb/surrealdb.py", rev = "rust-remove-tokio"}
 
 
 [build-system]

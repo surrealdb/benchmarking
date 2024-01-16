@@ -10,7 +10,7 @@ from mimesis import Datetime
 from random import Random
 from uuid import UUID, uuid4
 
-from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition
+from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition, insert_relate_statement
 
 # Create table data
 
@@ -211,19 +211,6 @@ db.signin({
     "username": "root",
     "password": "root",
 })
-
-
-def insert_relate_statement(table_data:list[dict]) -> str:
-    """
-    Inserting data through relate statement
-    """
-
-    table_record_id = -1
-    for record in table_data:
-        table_record_id += 1
-        db.query(
-    f"RELATE {table_data[table_record_id]['in']} -> {table_data[table_record_id]['id']} -> {table_data[table_record_id]['out']} CONTENT {record};"
-            )
 
 # %%
 db.query(f"INSERT INTO person {person_data}")

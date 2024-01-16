@@ -5,6 +5,7 @@ import sys
 import math
 
 import numpy as np
+from surrealdb import SurrealDB
 
 table_definition = {
     "person_amount": 1000,
@@ -13,6 +14,19 @@ table_definition = {
     "artist_amount": 500,
     "review_amount":2000
 }
+
+def insert_relate_statement(table_data:list[dict], db_connection=SurrealDB("ws://localhost:8000/test/test")) -> str:
+    """
+    Inserting data through relate statement
+    """
+    db = db_connection
+
+    table_record_id = -1
+    for record in table_data:
+        table_record_id += 1
+        db.query(
+    f"RELATE {table_data[table_record_id]['in']} -> {table_data[table_record_id]['id']} -> {table_data[table_record_id]['out']} CONTENT {record};"
+            )
 
 def generate_uuid4(amount, seed=42):
     """Yields a generator object of pseudorandom uuids"""
