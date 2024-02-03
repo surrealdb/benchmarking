@@ -1,5 +1,5 @@
 ## Create the data
-# %%
+
 # import required modules
 from mimesis.locales import Locale
 from mimesis.keys import maybe
@@ -9,6 +9,7 @@ from mimesis import Datetime
 
 from random import Random
 from uuid import UUID, uuid4
+import time
 
 from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition, insert_relate_statement
 
@@ -212,26 +213,91 @@ db.signin({
     "password": "root",
 })
 
-# %%
-db.query(f"INSERT INTO person {person_data}")
+def sdb_insert_person(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+    """
+    Run surrealdb query
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = time.perf_counter_ns()
 
-db.query(f"INSERT INTO product {product_data}")
+		# query to be run
+        db.query(f"INSERT INTO person {person_data}")
 
-insert_relate_statement(order_data)
+        end_time = time.perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    return result_list
 
-db.query(f"INSERT INTO artist {artist_data}")
 
-db.query(f"INSERT INTO review {review_data}")
+def sdb_insert_product(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+    """
+    Run surrealdb query
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = time.perf_counter_ns()
 
-db.query(""" 
-DEFINE INDEX _id_ ON TABLE person COLUMNS id;
-DEFINE INDEX _id_ ON TABLE product COLUMNS id;
-DEFINE INDEX _id_ ON TABLE artist COLUMNS id;
-DEFINE INDEX _id_ ON TABLE review COLUMNS id;
-""")
+		# query to be run
+        db.query(f"INSERT INTO product {product_data}")
+
+        end_time = time.perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    return result_list
+
+
+def sdb_insert_order(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+    """
+    Run surrealdb query
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = time.perf_counter_ns()
+
+		# query to be run
+        insert_relate_statement(order_data, db)
+
+        end_time = time.perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    return result_list
+
+def sdb_insert_artist(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+    """
+    Run surrealdb query
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = time.perf_counter_ns()
+
+		# query to be run
+        db.query(f"INSERT INTO artist {artist_data}")
+
+        end_time = time.perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    return result_list
+
+
+def sdb_insert_review(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+    """
+    Run surrealdb query
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = time.perf_counter_ns()
+
+		# query to be run
+        db.query(f"INSERT INTO review {review_data}")
+
+        end_time = time.perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    return result_list
 
 ## Run the queries
-# %%
+
 ## Q1-Q3 - comparing relationships, returning 3 fields from 3 tables (2x relationships)
 
 ### Q1: lookup vs record links
@@ -249,7 +315,7 @@ SELECT
 	product.image_url
 FROM review;
 """)
-# %%
+
 ### Q2: lookup vs graph - one connection
 
 db.query("""
@@ -265,7 +331,7 @@ SELECT
 	->product.image_url
 FROM order;
 """)
-# %%
+
 ### Q2 variant: lookup vs graph - using in/out instead of arrow
 
 db.query(""" 
@@ -281,7 +347,7 @@ SELECT
 	out.image_url
 FROM order;
 """)
-# %%
+
 ### Q3: lookup vs graph (and link) - two connections
 
 db.query("""
@@ -297,33 +363,34 @@ SELECT
 	->product.artist.phone
 FROM order;
 """)
-# %%
+
 ### Q4: Name and email for all customers in England
 
 db.query(""" 
 DEFINE INDEX person_country ON TABLE person COLUMNS address.country;
 """)
-# %%
+
 db.query(""" 
 SELECT name, email 
 FROM person 
 WHERE address.country = "England";	
 """)
-# %%
+
 ### Q5: standard count
 
 db.query(""" 
 DEFINE INDEX order_count ON TABLE order COLUMNS order_status, order_date;
 """)
-# %%
+
 db.query(""" 
 SELECT count() FROM order
 WHERE order_status IN ["delivered", "processing", "shipped"]
 AND time::month(<datetime>order_date) <4 
 GROUP ALL;
 """)
-# %%
+
 ### Q6: Count the number of confirmed orders in Q1 by artists in England
+#TODO change to date instead of time::month
 
 db.query(""" 
 SELECT count() FROM order
@@ -333,7 +400,7 @@ AND ->product.artist.address.country ?= "England"
 GROUP ALL;
 """)
 
-# %%
+
 ### Q7: Delete a specific review
 
 review_ids_for_deletion = get_gen_uuid4_unique_list(total_num=table_definition['review_amount'], list_num=10, seed=50)
@@ -342,14 +409,14 @@ db.query(f"""
 DELETE {str(review_ids_for_deletion.pop())}
 RETURN NONE;
 """)
-# %%
+
 ### Q8: Delete reviews from a particular category
 
-# TODO check if this index would work
+# TODO we currently only have index working on Select, coming later for Update/delete
 db.query(""" 
 DEFINE INDEX product_category ON TABLE review COLUMNS product.category;
 """)
-# %%
+
 db.query(""" 
 DELETE review
 WHERE product.category = "charcoal"
@@ -357,7 +424,7 @@ RETURN NONE;
 """)
 
 ### Q9: Update a customer address
-# %%
+
 person_ids_for_update = get_gen_uuid4_unique_list(total_num=table_definition['person_amount'], list_num=10, seed=10)
 
 db.query(f"UPDATE {str(person_ids_for_update.pop())}"+"""
@@ -371,20 +438,21 @@ SET address = {
 	}
 RETURN NONE;
 """)
-# %%
+
 ### Q10: Update discounts for products
 
+# TODO we currently only have index working on Select, coming later for Update/delete
 db.query(""" 
 DEFINE INDEX product_price ON TABLE product COLUMNS price;
 """)
-# %%
+
 db.query(""" 
 UPDATE product
 SET discount = 0.2
 WHERE price < 1000
 RETURN NONE;
 """)
-# %%
+
 ### Q11: Transaction - order from a new customer
 # TODO add variant with record links to compare directly against mongo
 
