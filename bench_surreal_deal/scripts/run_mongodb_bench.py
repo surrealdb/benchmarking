@@ -91,3 +91,50 @@ tx2_insert = mdb.mdb_q12(iterations=1, client=connection)
 transactions_end = perf_counter_ns()
 transactions_duration = transactions_end - transactions_start
 
+# create report
+
+## insert
+
+insert_person
+insert_artist
+insert_product
+insert_order
+insert_review
+
+insert_duration
+
+## index
+q4_index
+q5_index
+q8_index
+q10_index
+
+index_duration
+
+## read
+q1
+q2
+q3
+q4
+q5
+q6
+
+read_duration
+
+## update
+update_one
+update_many
+
+update_duration
+
+## delete
+delete_one
+delete_many
+
+delete_duration
+
+## transactions
+tx1_insert_update
+tx2_insert
+
+transactions_duration
