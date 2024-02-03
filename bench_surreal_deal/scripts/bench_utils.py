@@ -68,7 +68,10 @@ def get_gen_uuid4_unique_list(total_num, list_num, seed=42):
 
 
 def format_time(raw_time, unit="ms", precision=2):
-    """Return formatted time in selected unit"""
+    """
+    Takes in time in nanoseconds
+    Returns formatted time in selected unit
+    """
 
     units = {"s": 1e+9, "ms": 1e+6, "us": 1e+3, "ns": 1}
 
@@ -82,6 +85,23 @@ def format_time(raw_time, unit="ms", precision=2):
         formatted_time = f"{round(converted_time, precision)} {unit}"
 
     return formatted_time
+
+def calculate_latency_metrics(result_list):
+    """
+    Takes in a list of integers and calculates latency metrics
+    """
+    sorted_list = sorted(result_list)
+    number_of_results = len(result_list)-1 # accounting for zero-based indexing
+    
+    latency_metrics = {
+        "min": min(result_list),
+        "max": max(result_list),
+        "p50": sorted_list[(number_of_results * 50) // 100], # // same as using math floor
+        "p75": sorted_list[(number_of_results * 75) // 100],
+        "p90": sorted_list[(number_of_results * 90) // 100],
+        "p99": sorted_list[(number_of_results * 99) // 100]
+    }
+    return latency_metrics
 
 # plot_vals and plot_box adapted from here:
 # https://gitlab.com/Soha/termbox.py
