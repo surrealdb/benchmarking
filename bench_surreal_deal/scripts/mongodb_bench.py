@@ -11,7 +11,7 @@ from mimesis import Datetime
 
 from pymongo import MongoClient
 
-from bench_utils import generate_uuid4, get_gen_uuid4_unique_list, table_definition
+from bench_utils import table_definition, generate_uuid4, get_gen_uuid4_unique_list
 
 # create the data
 
@@ -173,7 +173,7 @@ def mongo_generate_order_data(person_data, product_data, amount=table_definition
 
     order_schema = Schema(
         schema=order_generator,
-        iterations=table_definition['order_amount']
+        iterations=amount
     )
 
     order_data = order_schema.create()
@@ -213,7 +213,7 @@ def mongo_generate_review_data(person_data, product_data, artist_data, amount=ta
 
     review_schema = Schema(
         schema=review_generator,
-        iterations=table_definition['review_amount']
+        iterations=amount
     )
 
     review_data = review_schema.create()
