@@ -17,7 +17,7 @@ from bench_utils import table_definition, generate_uuid4, get_gen_uuid4_unique_l
 
 ## person
 
-def mongo_generate_person_data(amount=table_definition['person_amount']):
+def mdb_generate_person_data(amount=table_definition['person_amount']):
 
     person_id = generate_uuid4(amount, seed=10)
 
@@ -55,7 +55,7 @@ def mongo_generate_person_data(amount=table_definition['person_amount']):
 
 ## artist
 
-def mongo_generate_artist_data(amount=table_definition['artist_amount']):
+def mdb_generate_artist_data(amount=table_definition['artist_amount']):
 
     artist_id = generate_uuid4(amount, seed=20)
 
@@ -94,7 +94,7 @@ def mongo_generate_artist_data(amount=table_definition['artist_amount']):
 
 ## product
 
-def mongo_generate_product_data(artist_data, amount=table_definition['product_amount']):
+def mdb_generate_product_data(artist_data, amount=table_definition['product_amount']):
 
     product_id = generate_uuid4(amount, seed=30)
     artist_id_count = range(table_definition['artist_amount']-1)
@@ -137,7 +137,7 @@ def mongo_generate_product_data(artist_data, amount=table_definition['product_am
 
 ## order
 
-def mongo_generate_order_data(person_data, product_data, amount=table_definition['order_amount']):
+def mdb_generate_order_data(person_data, product_data, amount=table_definition['order_amount']):
 
     order_id = generate_uuid4(amount, seed=40)
 
@@ -183,7 +183,7 @@ def mongo_generate_order_data(person_data, product_data, amount=table_definition
 
 ## review
 
-def mongo_generate_review_data(person_data, product_data, artist_data, amount=table_definition['review_amount']):
+def mdb_generate_review_data(person_data, product_data, artist_data, amount=table_definition['review_amount']):
 
     review_id = generate_uuid4(amount, seed=50)
 
@@ -223,7 +223,7 @@ def mongo_generate_review_data(person_data, product_data, artist_data, amount=ta
 
 # Load the data
 
-def mongo_insert_person(person_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_insert_person(person_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -243,7 +243,7 @@ def mongo_insert_person(person_data, iterations=1, client=MongoClient("mongodb:/
         result_list.append(duration)
     return result_list
 
-def mongo_insert_product(product_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_insert_product(product_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -263,7 +263,7 @@ def mongo_insert_product(product_data, iterations=1, client=MongoClient("mongodb
         result_list.append(duration)
     return result_list
 
-def mongo_insert_order(order_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_insert_order(order_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -283,7 +283,7 @@ def mongo_insert_order(order_data, iterations=1, client=MongoClient("mongodb://l
         result_list.append(duration)
     return result_list
 
-def mongo_insert_artist(artist_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_insert_artist(artist_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -303,7 +303,7 @@ def mongo_insert_artist(artist_data, iterations=1, client=MongoClient("mongodb:/
         result_list.append(duration)
     return result_list
 
-def mongo_insert_review(review_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_insert_review(review_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -330,7 +330,7 @@ def mongo_insert_review(review_data, iterations=1, client=MongoClient("mongodb:/
 
 ### Q1: lookup vs record links
 
-def mongo_q1(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q1(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -383,7 +383,7 @@ def mongo_q1(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 
 ### Q2: lookup vs graph - one connection
 
-def mongo_q2(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q2(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -439,7 +439,7 @@ def mongo_q2(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 # documentation doesn't say and have tried everything I can think of
 # ids are indexed by default anyway, but doesn't seem to matter here
 
-def mongo_q2_variant(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q2_variant(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -498,7 +498,7 @@ def mongo_q2_variant(iterations=1, client=MongoClient("mongodb://localhost:27017
 # TODO index is not triggered
 # might work with $unwind?
 
-def mongo_q3(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q3(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -553,7 +553,7 @@ def mongo_q3(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 
 ### Q4: Name and email for all customers in England
 
-def mongo_q4_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q4_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -573,7 +573,7 @@ def mongo_q4_index(iterations=1, client=MongoClient("mongodb://localhost:27017/"
         result_list.append(duration)
     return result_list
 
-def mongo_q4(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q4(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -604,7 +604,7 @@ def mongo_q4(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 # Sometimes that doesn't matter, but I think here it does since SurrelDB count() is exact.
 # also collection.estimated_document_count() gave wrong result in my tests
 
-def mongo_q5_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q5_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -624,7 +624,7 @@ def mongo_q5_index(iterations=1, client=MongoClient("mongodb://localhost:27017/"
         result_list.append(duration)
     return result_list
 
-def mongo_q5(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q5(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -651,7 +651,7 @@ def mongo_q5(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 
 # TODO Should I reduce to single $lookup? - people do nested though https://www.mongodb.com/community/forums/t/nested-lookup-aggregation/224456
 
-def mongo_q6(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q6(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -701,7 +701,7 @@ def mongo_q6(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 
 ### Q7: Delete a specific review
 
-def mongo_q7(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q7(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -724,7 +724,7 @@ def mongo_q7(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 
 ### Q8: Delete reviews from a particular category
 
-def mongo_q8_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q8_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -744,7 +744,7 @@ def mongo_q8_index(iterations=1, client=MongoClient("mongodb://localhost:27017/"
         result_list.append(duration)
     return result_list
 
-def mongo_q8(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q8(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -767,7 +767,7 @@ def mongo_q8(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 
 ### Q9: Update a customer address
 
-def mongo_q9(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q9(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -804,7 +804,7 @@ def mongo_q9(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuid
 
 ### Q10: Update discounts for products
 
-def mongo_q10_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q10_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -824,7 +824,7 @@ def mongo_q10_index(iterations=1, client=MongoClient("mongodb://localhost:27017/
         result_list.append(duration)
     return result_list
 
-def mongo_q10(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q10(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -852,7 +852,7 @@ def mongo_q10(iterations=1, client=MongoClient("mongodb://localhost:27017/", uui
 # Transaction - order from a new customer
 # TODO make with_transactions version for distributed test
 
-def mongo_q11(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q11(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """
@@ -924,7 +924,7 @@ def mongo_q11(iterations=1, client=MongoClient("mongodb://localhost:27017/", uui
 # Transaction - New Artist creates their first product
 # TODO make with_transactions version for distributed test
 
-def mongo_q12(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+def mdb_q12(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
     Run mongodb query
     """

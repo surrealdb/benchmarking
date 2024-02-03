@@ -1,7 +1,6 @@
 from random import Random
 from uuid import UUID
 import time
-import sys
 import math
 
 import numpy as np
