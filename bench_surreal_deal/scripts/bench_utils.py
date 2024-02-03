@@ -67,7 +67,7 @@ def get_gen_uuid4_unique_list(total_num, list_num, seed=42):
     return uuid_list
 
 
-def format_time(raw_time, unit="ms", precision=2):
+def format_time(raw_time, unit="ms", precision=0):
     """
     Takes in time in nanoseconds
     Returns formatted time in selected unit
@@ -80,7 +80,9 @@ def format_time(raw_time, unit="ms", precision=2):
     converted_time = raw_time / selected_unit
 
     if int(converted_time) == converted_time:
-        formatted_time = f"{int(converted_time)} {unit}"
+        formatted_time = f"{converted_time} {unit}"
+    elif precision==0:
+        formatted_time = f"{int(round(converted_time, precision))} {unit}"
     else:
         formatted_time = f"{round(converted_time, precision)} {unit}"
 
