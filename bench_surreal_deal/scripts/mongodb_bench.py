@@ -241,7 +241,10 @@ def mdb_insert_person(person_data, iterations=1, client=MongoClient("mongodb://l
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def mdb_insert_product(product_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -261,7 +264,10 @@ def mdb_insert_product(product_data, iterations=1, client=MongoClient("mongodb:/
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def mdb_insert_order(order_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -281,7 +287,10 @@ def mdb_insert_order(order_data, iterations=1, client=MongoClient("mongodb://loc
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def mdb_insert_artist(artist_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -301,7 +310,11 @@ def mdb_insert_artist(artist_data, iterations=1, client=MongoClient("mongodb://l
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
+
 
 def mdb_insert_review(review_data, iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -321,7 +334,10 @@ def mdb_insert_review(review_data, iterations=1, client=MongoClient("mongodb://l
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 
 # Run the queries
@@ -379,7 +395,10 @@ def mdb_q1(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q2: lookup vs graph - one connection
 
@@ -432,7 +451,10 @@ def mdb_q2(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q2 variant: graphlookup vs graph - one connection
 # note - not possible with index?
@@ -492,7 +514,10 @@ def mdb_q2_variant(iterations=1, client=MongoClient("mongodb://localhost:27017/"
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q3: lookup vs graph - two connections
 # TODO index is not triggered
@@ -549,7 +574,10 @@ def mdb_q3(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q4: Name and email for all customers in England
 
@@ -571,7 +599,10 @@ def mdb_q4_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", 
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def mdb_q4(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -594,7 +625,10 @@ def mdb_q4(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q5: standard count
 
@@ -622,7 +656,10 @@ def mdb_q5_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", 
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def mdb_q5(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -645,7 +682,10 @@ def mdb_q5(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q6: count with a relationship (agg framework) - Count the number of confirmed orders in Q1 by artists in England
 
@@ -697,7 +737,10 @@ def mdb_q6(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q7: Delete a specific review
 
@@ -720,7 +763,10 @@ def mdb_q7(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q8: Delete reviews from a particular category
 
@@ -742,7 +788,10 @@ def mdb_q8_index(iterations=1, client=MongoClient("mongodb://localhost:27017/", 
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def mdb_q8(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -763,7 +812,10 @@ def mdb_q8(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q9: Update a customer address
 
@@ -800,7 +852,10 @@ def mdb_q9(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRe
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q10: Update discounts for products
 
@@ -822,7 +877,10 @@ def mdb_q10_index(iterations=1, client=MongoClient("mongodb://localhost:27017/",
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def mdb_q10(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -845,7 +903,10 @@ def mdb_q10(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidR
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q11: "Transaction"* order from a new customer
 
@@ -917,7 +978,10 @@ def mdb_q11(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidR
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q12: "Transaction"* - New Artist creates their first product
 
@@ -981,4 +1045,7 @@ def mdb_q12(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidR
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list

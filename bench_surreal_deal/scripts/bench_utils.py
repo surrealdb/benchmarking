@@ -112,6 +112,10 @@ def calculate_latency_metrics(result_list):
     }
     return latency_metrics
 
+def throughput_calc(query_count, duration, unit="s", precision=2):
+    throughput = query_count / format_time(duration, unit=unit, precision=precision, unit_label=False)
+    return throughput
+
 # plot_vals and plot_box adapted from here:
 # https://gitlab.com/Soha/termbox.py
 def plot_vals(vals, step, ticks, out, prefix):
