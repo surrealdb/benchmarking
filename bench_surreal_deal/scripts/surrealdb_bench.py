@@ -680,7 +680,7 @@ def sdb_q10(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
 ### Q11: Transaction - order from a new customer
 # TODO add variant with record links to compare directly against mongo
 
-def sdb_q11_transaction(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+def sdb_q11(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
     Run surrealdb query
     """
@@ -747,7 +747,7 @@ def sdb_q11_transaction(iterations=1, db=SurrealDB("ws://localhost:8000/test/tes
 ### Q12: Transaction - New Artist creates their first product
 # Transaction - New Artist creates their first product
 
-def sdb_q12_transaction(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+def sdb_q12(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
     Run surrealdb query
     """

@@ -9,14 +9,14 @@ from bench_utils import calculate_latency_metrics, plot_box, create_markdown_tab
 # - label
 # - SDB & MDB box plots
 # - Query
-# - Table headers - percentile | SDB | MDB | Difference
+# - Table headers - | Metric | SurrealDB | MongoDB | Difference
 
 
 output_files_path = pathlib.Path(__file__).parents[1] / "output_files"
 
 # Get SurrealDB results
-# with open(output_files_path / pathlib.Path("surrealdb_bench_run_output.json"), "r") as file:
-#     mongodb_bench_results = json.read(file)
+# with open(output_files_path / pathlib.Path("surrealdb_bench_output.json"), "r") as file:
+#     surrealdb_bench_results = json.read(file)
 
 # Get MongoDB results
 with open(output_files_path / pathlib.Path("mongodb_bench_output.json"), "r") as file:
