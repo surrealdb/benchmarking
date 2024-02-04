@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 import mongodb_bench as mdb
 
-from bench_utils import format_time, throughput_calc
+from bench_utils import format_time, calculate_latency_metrics, plot_box
 
 # create the data
 
@@ -25,7 +25,8 @@ connection = MongoClient(MONGODB_URI, uuidRepresentation='standard')
 
 runs = 10
 
-bench_run_output_list_each = []
+# currently not needed but might be useful later
+# bench_run_output_list_each = []
 
 bench_run_output_list_combined = {
         "insert_person": [],
@@ -187,53 +188,6 @@ for run in range(runs):
 
     # create JSON output
 
-    bench_run_record = {
-        "run_number": run+1,  
-        "insert_person": insert_person,
-        "insert_artist": insert_artist,
-        "insert_product": insert_product,
-        "insert_order": insert_order,
-        "insert_review": insert_review,
-        "insert_duration": insert_duration,
-        "insert_query_count": insert_query_count,
-        "q4_index": q4_index,
-        "q5_index": q5_index,
-        "q8_index": q8_index,
-        "q10_index": q10_index,
-        "index_duration": index_duration,
-        "index_query_count": index_query_count,
-        "q1": q1,
-        "q2": q2,
-        "q3": q3,
-        "q4": q4,
-        "q5": q5,
-        "q6": q6,
-        "read_filter_duration": read_filter_duration,
-        "read_relationships_duration": read_relationships_duration,
-        "read_aggregation_duration": read_aggregation_duration,
-        "read_query_count": read_query_count,
-        "update_one": update_one,
-        "update_many": update_many,
-        "update_duration": update_duration,
-        "update_query_count": update_query_count,
-        "delete_one": delete_one,
-        "delete_many": delete_many,
-        "delete_duration": delete_duration,
-        "delete_query_count": delete_query_count,
-        "tx1_insert_update": tx1_insert_update,
-        "tx2_insert": tx2_insert,
-        "transactions_duration": transactions_duration,
-        "transactions_count": transactions_count,
-        "total_read_duration": total_read_duration,
-        "total_write_duration": total_write_duration,
-        "total_time_duration": total_time_duration,
-        "total_queries_count": total_queries_count,
-        "total_throughput_qps": total_throughput_qps,
-        "wall_time_duration": wall_time_duration
-        }
-
-    bench_run_output_list_each.append(bench_run_record)
-
     bench_run_output_list_combined["insert_person"].append(insert_person)
     bench_run_output_list_combined["insert_artist"].append(insert_artist)
     bench_run_output_list_combined["insert_order"].append(insert_order)
@@ -275,11 +229,90 @@ for run in range(runs):
     bench_run_output_list_combined["total_throughput_qps"].append(total_throughput_qps)
     bench_run_output_list_combined["wall_time_duration"].append(wall_time_duration)
 
+    # currently not needed but might be useful later
+    # bench_run_record = {
+    #     "run_number": run+1,  
+    #     "insert_person": insert_person,
+    #     "insert_artist": insert_artist,
+    #     "insert_product": insert_product,
+    #     "insert_order": insert_order,
+    #     "insert_review": insert_review,
+    #     "insert_duration": insert_duration,
+    #     "insert_query_count": insert_query_count,
+    #     "q4_index": q4_index,
+    #     "q5_index": q5_index,
+    #     "q8_index": q8_index,
+    #     "q10_index": q10_index,
+    #     "index_duration": index_duration,
+    #     "index_query_count": index_query_count,
+    #     "q1": q1,
+    #     "q2": q2,
+    #     "q3": q3,
+    #     "q4": q4,
+    #     "q5": q5,
+    #     "q6": q6,
+    #     "read_filter_duration": read_filter_duration,
+    #     "read_relationships_duration": read_relationships_duration,
+    #     "read_aggregation_duration": read_aggregation_duration,
+    #     "read_query_count": read_query_count,
+    #     "update_one": update_one,
+    #     "update_many": update_many,
+    #     "update_duration": update_duration,
+    #     "update_query_count": update_query_count,
+    #     "delete_one": delete_one,
+    #     "delete_many": delete_many,
+    #     "delete_duration": delete_duration,
+    #     "delete_query_count": delete_query_count,
+    #     "tx1_insert_update": tx1_insert_update,
+    #     "tx2_insert": tx2_insert,
+    #     "transactions_duration": transactions_duration,
+    #     "transactions_count": transactions_count,
+    #     "total_read_duration": total_read_duration,
+    #     "total_write_duration": total_write_duration,
+    #     "total_time_duration": total_time_duration,
+    #     "total_queries_count": total_queries_count,
+    #     "total_throughput_qps": total_throughput_qps,
+    #     "wall_time_duration": wall_time_duration
+    #     }
+    # bench_run_output_list_each.append(bench_run_record)
+
 # # Output the results
 # export_path = pathlib.Path(__file__).parents[0]
 
 # with open(export_path / pathlib.Path("output.json"), "w") as write_file:
 #     json.dump(bench_run_output_list, write_file, ensure_ascii=False)
 
-# create report and more metrics
 
+# create report
+
+# Structure of report
+# - label
+# - SDB & MDB box plots
+# - Query
+# - Table headers - percentile | SDB | MDB | Difference
+
+prefix = "MDB: "
+
+report = f"""
+# Surreal bench
+
+This benchmark compares SurrealDB and MongoDB performance across a variety of CRUD queries.
+
+## Aggregate results
+
+| Metric | SurrealDB | MongoDB | Difference
+P99 throughput (QPS)
+P99 latency (ms)
+P99 read latency (ms)
+P99 write latency (ms) 
+
+## Detailed results
+
+### Insert
+both throughput and latency?
+
+| Metric | SurrealDB | MongoDB | Difference
+
+
+"""
+print(report)

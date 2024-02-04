@@ -4,6 +4,7 @@ import time
 import math
 
 import numpy as np
+from tabulate import tabulate
 from surrealdb import SurrealDB
 
 table_definition = {
@@ -192,6 +193,18 @@ def plot_box(data, prefix="", nticks=5, maxima=True, outliers=True, debug=False,
     tick_width = len(str(ticks.max()))
 
     plot_vals(vals, step, ticks, out if outliers else None, prefix=prefix)
+
+def create_markdown_table(SDB_metrics, MDB_metrics):
+    SDB_metrics_list = list(SDB_metrics.values())
+    MDB_metrics_list = list(MDB_metrics.values())
+    reshaped_dict = {
+        "Metric": list(SDB_metrics.keys()),
+        "SurrealDB": SDB_metrics_list,
+        "MongoDB": MDB_metrics_list,
+        "Difference": [round((((mdb - sdb) / sdb) * 100), 1) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
+    }
+    table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
+    return table
 
 def run_surrealdb_query(operation, query, iterations=1):
     """
