@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 import mongodb_bench as mdb
 
-from bench_utils import format_time, calculate_latency_metrics, plot_box
+from bench_utils import format_time
 
 # create the data
 
@@ -90,7 +90,7 @@ for run in range(runs):
 
     insert_end = perf_counter_ns()
     insert_duration = insert_end - insert_start
-    print("insert latency(ms):", format_time(insert_duration,unit="ms", precision=2))
+    print("insert latency(ms):", format_time(insert_duration, unit="ms", precision=2, unit_label=True))
 
     ## create indexes
     index_start = perf_counter_ns()
@@ -102,7 +102,7 @@ for run in range(runs):
 
     index_end = perf_counter_ns()
     index_duration = index_end - index_start
-    print("index latency(ms):", format_time(index_duration, unit="ms", precision=2))
+    print("index latency(ms):", format_time(index_duration, unit="ms", precision=2, unit_label=True))
 
     ## read
     read_filter_start = perf_counter_ns()
@@ -112,7 +112,7 @@ for run in range(runs):
 
     read_filter_end = perf_counter_ns()
     read_filter_duration = read_filter_end - read_filter_start
-    print("read filter latency(ms):", format_time(read_filter_duration, unit="ms", precision=2))
+    print("read filter latency(ms):", format_time(read_filter_duration, unit="ms", precision=2, unit_label=True))
 
     read_relationships_start = perf_counter_ns()
 
@@ -123,7 +123,7 @@ for run in range(runs):
 
     read_relationships_end = perf_counter_ns()
     read_relationships_duration = read_relationships_end - read_relationships_start
-    print("read relationships latency(ms):", format_time(read_relationships_duration, unit="ms", precision=2))
+    print("read relationships latency(ms):", format_time(read_relationships_duration, unit="ms", precision=2, unit_label=True))
 
     read_aggregation_start = perf_counter_ns()
     ### aggregation
@@ -132,7 +132,7 @@ for run in range(runs):
 
     read_aggregation_end = perf_counter_ns()
     read_aggregation_duration = read_aggregation_end - read_aggregation_start
-    print("read aggregation latency(ms):", format_time(read_aggregation_duration, unit="ms", precision=2))
+    print("read aggregation latency(ms):", format_time(read_aggregation_duration, unit="ms", precision=2, unit_label=True))
 
     ## update 
     update_start = perf_counter_ns()
@@ -142,7 +142,7 @@ for run in range(runs):
 
     update_end = perf_counter_ns()
     update_duration = update_end - update_start
-    print("update latency(ms):", format_time(update_duration, unit="ms", precision=2))
+    print("update latency(ms):", format_time(update_duration, unit="ms", precision=2, unit_label=True))
 
     ## delete
     delete_start = perf_counter_ns()
@@ -152,7 +152,7 @@ for run in range(runs):
 
     delete_end = perf_counter_ns()
     delete_duration = delete_end - delete_start
-    print("delete latency(ms):", format_time(delete_duration, unit="ms", precision=2))
+    print("delete latency(ms):", format_time(delete_duration, unit="ms", precision=2, unit_label=True))
 
     ## transactions
     transactions_start = perf_counter_ns()
@@ -162,7 +162,7 @@ for run in range(runs):
 
     transactions_end = perf_counter_ns()
     transactions_duration = transactions_end - transactions_start
-    print("transaction latency(ms):", format_time(transactions_duration, unit="ms", precision=2))
+    print("transaction latency(ms):", format_time(transactions_duration, unit="ms", precision=2, unit_label=True))
 
     wall_time_end = perf_counter_ns()
 
@@ -171,9 +171,9 @@ for run in range(runs):
     total_read_duration = read_filter_duration + read_relationships_duration + read_aggregation_duration
     total_write_duration = insert_duration + index_duration  + update_duration + delete_duration + transactions_duration
     total_time_duration = total_read_duration + total_write_duration
-    print("total read latency(ms):", format_time(total_read_duration, unit="ms", precision=2))
-    print("total write latency(ms):", format_time(total_write_duration, unit="ms", precision=2))
-    print("total latency(ms):", format_time(total_time_duration, unit="ms", precision=2))
+    print("total read latency(ms):", format_time(total_read_duration, unit="ms", precision=2, unit_label=True))
+    print("total write latency(ms):", format_time(total_write_duration, unit="ms", precision=2, unit_label=True))
+    print("total latency(ms):", format_time(total_time_duration, unit="ms", precision=2, unit_label=True))
 
     insert_query_count = 5
     index_query_count = 4
@@ -276,43 +276,8 @@ for run in range(runs):
     #     }
     # bench_run_output_list_each.append(bench_run_record)
 
-# # Output the results
-# export_path = pathlib.Path(__file__).parents[0]
+# Output the results
+export_path = pathlib.Path(__file__).parents[1] / "output_files"
 
-# with open(export_path / pathlib.Path("output.json"), "w") as write_file:
-#     json.dump(bench_run_output_list, write_file, ensure_ascii=False)
-
-
-# create report
-
-# Structure of report
-# - label
-# - SDB & MDB box plots
-# - Query
-# - Table headers - percentile | SDB | MDB | Difference
-
-prefix = "MDB: "
-
-report = f"""
-# Surreal bench
-
-This benchmark compares SurrealDB and MongoDB performance across a variety of CRUD queries.
-
-## Aggregate results
-
-| Metric | SurrealDB | MongoDB | Difference
-P99 throughput (QPS)
-P99 latency (ms)
-P99 read latency (ms)
-P99 write latency (ms) 
-
-## Detailed results
-
-### Insert
-both throughput and latency?
-
-| Metric | SurrealDB | MongoDB | Difference
-
-
-"""
-print(report)
+with open(export_path / pathlib.Path("mongodb_bench_output.json"), "w") as file:
+    json.dump(bench_run_output_list_combined, file, ensure_ascii=False)

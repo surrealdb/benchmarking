@@ -130,69 +130,56 @@ def throughput_calc(query_count, duration, unit="s", precision=2):
     throughput = query_count / format_time(duration, unit=unit, precision=precision)
     return throughput
 
-# plot_vals and plot_box adapted from here:
+# foundation for plot_vals and plot_box adapted from here:
 # https://gitlab.com/Soha/termbox.py
-def plot_vals(vals, step, ticks, out, prefix):
+def plot_vals(vals, step, ticks, out):
     i = -1
     v = ticks[0]
-    print(prefix, end="")
+    box_plot = ""
     while v < ticks[-1]:
         if i == -1:
-            if out is not None and v < out[0] and v + step > out[0]:
-                print("+", end="")
+            if v < out[0] and v + step > out[0]:
+                box_plot += "+"
             elif v > vals[0]:
-                print("|", end="")
+                box_plot += "|"
             else:
-                print(" ", end="")
+                box_plot += " "
         elif i == 0:
-            print("-", end="")
+            box_plot += "-"
         elif i < 3:
             if v < vals[2] and v + step > vals[2]:  # Median is only one point
-                print(":", end="")
+                box_plot += ":"
             else:
-                print("=", end="")
+                box_plot += "="
         elif i == 3:
             if v >= vals[4] or v + step > ticks[-1]:
-                print("|", end="")
+                box_plot += "|"
             else:
-                print("-", end="")
+                box_plot += "-"
         if i == 4:
-            if out is not None and v < out[1] and v + step > out[1]:
-                print("+", end="")
+            if v < out[1] and v + step > out[1]:
+                box_plot += "+"
             else:
-                print(" ", end="")
+                box_plot += " "
         elif v > vals[i + 1]:
             i += 1
 
         v += step
-    print("")
+    return box_plot
 
-def plot_box(data, prefix="", nticks=5, maxima=True, outliers=True, debug=False, unit="ms"):
+def plot_box(data, nticks=5):
     box = [5, 25, 50, 75, 95]
     df = np.array(data, dtype=np.float64)
     vals = np.quantile(df, [x / 100 for x in box])
     out = np.quantile(df, [0.01, 0.99])
 
-    if maxima:
-        lo, hi = (df.min(), df.max())
-    elif outliers:
-        lo, hi = (out[0], out[1])
-    else:
-        lo, hi = (vals.min(), vals.max())
+    lo, hi = (df.min(), df.max())
 
     ticks = np.unique(np.linspace(lo, math.ceil(hi), nticks, dtype=int))
     # The step is the *width* of a character
     step = (ticks.max() - ticks.min()) / 50
 
-    if debug:
-        print("step:", step)
-        print("vals:", vals)
-        print("ticks:", ticks)
-        print("out:", out)
-
-    tick_width = len(str(ticks.max()))
-
-    plot_vals(vals, step, ticks, out if outliers else None, prefix=prefix)
+    return plot_vals(vals, step, ticks, out)
 
 def create_markdown_table(SDB_metrics, MDB_metrics):
     SDB_metrics_list = list(SDB_metrics.values())
