@@ -66,7 +66,7 @@ def get_gen_uuid4_unique_list(total_num, list_num, seed=42):
     return uuid_list
 
 
-def format_time(raw_time, unit="ms", precision=0, unit_label=True):
+def format_time(raw_time, unit="ms", precision=0, unit_label=False):
     """
     Takes in time in nanoseconds
     Returns formatted time in selected unit
@@ -78,13 +78,6 @@ def format_time(raw_time, unit="ms", precision=0, unit_label=True):
 
     converted_time = raw_time / selected_unit
 
-    if unit_label == True:
-        if int(converted_time) == converted_time:
-            formatted_time = f"{converted_time} {unit}"
-        elif precision==0:
-            formatted_time = f"{int(round(converted_time, precision))} {unit}"
-        else:
-            formatted_time = f"{round(converted_time, precision)} {unit}"
     if unit_label == False:
         if int(converted_time) == converted_time:
             formatted_time = converted_time
@@ -93,27 +86,47 @@ def format_time(raw_time, unit="ms", precision=0, unit_label=True):
         else:
             formatted_time = round(converted_time, precision)
 
+    if unit_label == True:
+        if int(converted_time) == converted_time:
+            formatted_time = f"{converted_time} {unit}"
+        elif precision==0:
+            formatted_time = f"{int(round(converted_time, precision))} {unit}"
+        else:
+            formatted_time = f"{round(converted_time, precision)} {unit}"
+
     return formatted_time
 
-def calculate_latency_metrics(result_list):
+def format_time_list(raw_time_list, unit="ms", precision=0, unit_label=False):
+    """
+    Takes in a list of time in nanoseconds
+    Returns a list of formatted time in selected unit
+    """
+    return [format_time(raw_time, unit=unit, precision=precision, unit_label=unit_label) for raw_time in raw_time_list]
+
+
+def calculate_latency_metrics(result_list, unit="ms"):
     """
     Takes in a list of integers and calculates latency metrics
     """
     sorted_list = sorted(result_list)
     number_of_results = len(result_list)-1 # accounting for zero-based indexing
     
+    # // same as using math floor
     latency_metrics = {
-        "min": min(result_list),
-        "max": max(result_list),
-        "p50": sorted_list[(number_of_results * 50) // 100], # // same as using math floor
-        "p75": sorted_list[(number_of_results * 75) // 100],
-        "p90": sorted_list[(number_of_results * 90) // 100],
-        "p99": sorted_list[(number_of_results * 99) // 100]
+        f"min({unit})": format_time(min(result_list), unit_label=False),
+        f"p1({unit})": format_time(sorted_list[(number_of_results * 1) // 100]),
+        f"p5({unit})": format_time(sorted_list[(number_of_results * 5) // 100]),
+        f"p25({unit})": format_time(sorted_list[(number_of_results * 25) // 100]),
+        f"p50({unit})": format_time(sorted_list[(number_of_results * 50) // 100]),
+        f"p75({unit})": format_time(sorted_list[(number_of_results * 75) // 100]),
+        f"p90({unit})": format_time(sorted_list[(number_of_results * 90) // 100]),
+        f"p99({unit})": format_time(sorted_list[(number_of_results * 99) // 100]),
+        f"max({unit})": format_time(max(result_list), unit_label=False)
     }
     return latency_metrics
 
 def throughput_calc(query_count, duration, unit="s", precision=2):
-    throughput = query_count / format_time(duration, unit=unit, precision=precision, unit_label=False)
+    throughput = query_count / format_time(duration, unit=unit, precision=precision)
     return throughput
 
 # plot_vals and plot_box adapted from here:
@@ -153,7 +166,7 @@ def plot_vals(vals, step, ticks, out, prefix):
         v += step
     print("")
 
-def plot_box(data, nticks=5, maxima=True, outliers=True, debug=False):
+def plot_box(data, prefix="", nticks=5, maxima=True, outliers=True, debug=False, unit="ms"):
     box = [5, 25, 50, 75, 95]
     df = np.array(data, dtype=np.float64)
     vals = np.quantile(df, [x / 100 for x in box])
@@ -178,7 +191,7 @@ def plot_box(data, nticks=5, maxima=True, outliers=True, debug=False):
 
     tick_width = len(str(ticks.max()))
 
-    plot_vals(vals, step, ticks, out if outliers else None, " " * (tick_width // 2))
+    plot_vals(vals, step, ticks, out if outliers else None, prefix=prefix)
 
 def run_surrealdb_query(operation, query, iterations=1):
     """
