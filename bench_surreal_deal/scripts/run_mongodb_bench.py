@@ -25,7 +25,51 @@ connection = MongoClient(MONGODB_URI, uuidRepresentation='standard')
 
 runs = 10
 
-bench_run_output_list = []
+bench_run_output_list_each = []
+
+bench_run_output_list_combined = {
+        "insert_person": [],
+        "insert_artist": [],
+        "insert_product": [],
+        "insert_order": [],
+        "insert_review": [],
+        "insert_duration": [],
+        "insert_query_count": [],
+        "q4_index": [],
+        "q5_index": [],
+        "q8_index": [],
+        "q10_index": [],
+        "index_duration": [],
+        "index_query_count": [],
+        "q1": [],
+        "q2": [],
+        "q3": [],
+        "q4": [],
+        "q5": [],
+        "q6": [],
+        "read_filter_duration": [],
+        "read_relationships_duration": [],
+        "read_aggregation_duration": [],
+        "read_query_count": [],
+        "update_one": [],
+        "update_many": [],
+        "update_duration": [],
+        "update_query_count":[],
+        "delete_one": [],
+        "delete_many": [],
+        "delete_duration": [],
+        "delete_query_count": [],
+        "tx1_insert_update": [],
+        "tx2_insert": [],
+        "transactions_duration": [],
+        "transactions_count": [],
+        "total_read_duration": [],
+        "total_write_duration": [],
+        "total_time_duration": [],
+        "total_queries_count": [],
+        "total_throughput_qps": [],
+        "wall_time_duration": []
+        }
 
 for run in range(runs):
     # in case it exists drop the database
@@ -144,6 +188,7 @@ for run in range(runs):
     # create JSON output
 
     bench_run_record = {
+        "run_number": run+1,  
         "insert_person": insert_person,
         "insert_artist": insert_artist,
         "insert_product": insert_product,
@@ -187,10 +232,54 @@ for run in range(runs):
         "wall_time_duration": wall_time_duration
         }
 
-    bench_run_output_list.append(bench_run_record)
+    bench_run_output_list_each.append(bench_run_record)
 
-# Output the results
-export_path = pathlib.Path(__file__).parents[0]
+    bench_run_output_list_combined["insert_person"].append(insert_person)
+    bench_run_output_list_combined["insert_artist"].append(insert_artist)
+    bench_run_output_list_combined["insert_order"].append(insert_order)
+    bench_run_output_list_combined["insert_review"].append(insert_review)
+    bench_run_output_list_combined["insert_duration"].append(insert_duration)
+    bench_run_output_list_combined["insert_query_count"].append(insert_query_count)
+    bench_run_output_list_combined["q4_index"].append(q4_index)
+    bench_run_output_list_combined["q5_index"].append(q5_index)
+    bench_run_output_list_combined["q8_index"].append(q8_index)
+    bench_run_output_list_combined["q10_index"].append(q10_index)
+    bench_run_output_list_combined["index_duration"].append(index_duration)
+    bench_run_output_list_combined["index_query_count"].append(index_query_count)
+    bench_run_output_list_combined["q1"].append(q1)
+    bench_run_output_list_combined["q2"].append(q2)
+    bench_run_output_list_combined["q3"].append(q3)
+    bench_run_output_list_combined["q4"].append(q4)
+    bench_run_output_list_combined["q5"].append(q5)
+    bench_run_output_list_combined["q6"].append(q6)
+    bench_run_output_list_combined["read_filter_duration"].append(read_filter_duration)
+    bench_run_output_list_combined["read_relationships_duration"].append(read_relationships_duration)
+    bench_run_output_list_combined["read_aggregation_duration"].append(read_aggregation_duration)
+    bench_run_output_list_combined["read_query_count"].append(read_query_count)
+    bench_run_output_list_combined["update_one"].append(update_one)
+    bench_run_output_list_combined["update_many"].append(update_many)
+    bench_run_output_list_combined["update_duration"].append(update_duration)
+    bench_run_output_list_combined["update_query_count"].append(update_query_count)
+    bench_run_output_list_combined["delete_one"].append(delete_one)
+    bench_run_output_list_combined["delete_many"].append(delete_many)
+    bench_run_output_list_combined["delete_duration"].append(delete_duration)
+    bench_run_output_list_combined["delete_query_count"].append(delete_query_count)
+    bench_run_output_list_combined["tx1_insert_update"].append(tx1_insert_update)
+    bench_run_output_list_combined["tx2_insert"].append(tx2_insert)
+    bench_run_output_list_combined["transactions_duration"].append(transactions_duration)
+    bench_run_output_list_combined["transactions_count"].append(transactions_count)
+    bench_run_output_list_combined["total_read_duration"].append(total_read_duration)
+    bench_run_output_list_combined["total_write_duration"].append(total_write_duration)
+    bench_run_output_list_combined["total_time_duration"].append(total_time_duration)
+    bench_run_output_list_combined["total_queries_count"].append(total_queries_count)
+    bench_run_output_list_combined["total_throughput_qps"].append(total_throughput_qps)
+    bench_run_output_list_combined["wall_time_duration"].append(wall_time_duration)
 
-with open(export_path / pathlib.Path("output.json"), "w") as write_file:
-    json.dump(bench_run_output_list, write_file, ensure_ascii=False)
+# # Output the results
+# export_path = pathlib.Path(__file__).parents[0]
+
+# with open(export_path / pathlib.Path("output.json"), "w") as write_file:
+#     json.dump(bench_run_output_list, write_file, ensure_ascii=False)
+
+# create report and more metrics
+
