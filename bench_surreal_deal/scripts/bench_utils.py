@@ -114,7 +114,7 @@ def calculate_latency_metrics(result_list, unit="ms"):
     
     # // same as using math floor
     latency_metrics = {
-        f"min({unit})": format_time(min(result_list), unit_label=False),
+        f"min({unit})": format_time(min(result_list)),
         f"p1({unit})": format_time(sorted_list[(number_of_results * 1) // 100]),
         f"p5({unit})": format_time(sorted_list[(number_of_results * 5) // 100]),
         f"p25({unit})": format_time(sorted_list[(number_of_results * 25) // 100]),
@@ -122,7 +122,7 @@ def calculate_latency_metrics(result_list, unit="ms"):
         f"p75({unit})": format_time(sorted_list[(number_of_results * 75) // 100]),
         f"p90({unit})": format_time(sorted_list[(number_of_results * 90) // 100]),
         f"p99({unit})": format_time(sorted_list[(number_of_results * 99) // 100]),
-        f"max({unit})": format_time(max(result_list), unit_label=False)
+        f"max({unit})": format_time(max(result_list))
     }
     return latency_metrics
 
@@ -181,7 +181,10 @@ def plot_box(data, nticks=5):
 
     return plot_vals(vals, step, ticks, out)
 
-def create_markdown_table(SDB_metrics, MDB_metrics):
+def create_markdown_metrics_table(SDB_result, MDB_result):
+    SDB_metrics = calculate_latency_metrics(SDB_result)
+    MDB_metrics = calculate_latency_metrics(MDB_result)
+
     SDB_metrics_list = list(SDB_metrics.values())
     MDB_metrics_list = list(MDB_metrics.values())
     reshaped_dict = {
