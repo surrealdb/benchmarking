@@ -114,15 +114,15 @@ def calculate_latency_metrics(result_list, unit="ms"):
     
     # // same as using math floor
     latency_metrics = {
-        f"min({unit})": format_time(min(result_list)),
-        f"p1({unit})": format_time(sorted_list[(number_of_results * 1) // 100]),
-        f"p5({unit})": format_time(sorted_list[(number_of_results * 5) // 100]),
-        f"p25({unit})": format_time(sorted_list[(number_of_results * 25) // 100]),
-        f"p50({unit})": format_time(sorted_list[(number_of_results * 50) // 100]),
-        f"p75({unit})": format_time(sorted_list[(number_of_results * 75) // 100]),
-        f"p90({unit})": format_time(sorted_list[(number_of_results * 90) // 100]),
-        f"p99({unit})": format_time(sorted_list[(number_of_results * 99) // 100]),
-        f"max({unit})": format_time(max(result_list))
+        f"min({unit})": format_time(min(result_list), unit=unit),
+        f"p1({unit})": format_time(sorted_list[(number_of_results * 1) // 100], unit=unit),
+        f"p5({unit})": format_time(sorted_list[(number_of_results * 5) // 100], unit=unit),
+        f"p25({unit})": format_time(sorted_list[(number_of_results * 25) // 100], unit=unit),
+        f"p50({unit})": format_time(sorted_list[(number_of_results * 50) // 100], unit=unit),
+        f"p75({unit})": format_time(sorted_list[(number_of_results * 75) // 100], unit=unit),
+        f"p90({unit})": format_time(sorted_list[(number_of_results * 90) // 100], unit=unit),
+        f"p99({unit})": format_time(sorted_list[(number_of_results * 99) // 100], unit=unit),
+        f"max({unit})": format_time(max(result_list), unit=unit)
     }
     return latency_metrics
 
@@ -170,8 +170,8 @@ def plot_vals(vals, step, ticks, out):
 def plot_box(data, nticks=5):
     box = [5, 25, 50, 75, 95]
     df = np.array(data, dtype=np.float64)
-    vals = np.quantile(df, [x / 100 for x in box])
-    out = np.quantile(df, [0.01, 0.99])
+    vals = np.quantile(df, [x / 100 for x in box], method="lower")
+    out = np.quantile(df, [0.01, 0.99], method="lower")
 
     lo, hi = (df.min(), df.max())
 
@@ -181,9 +181,9 @@ def plot_box(data, nticks=5):
 
     return plot_vals(vals, step, ticks, out)
 
-def create_markdown_metrics_table(SDB_result, MDB_result):
-    SDB_metrics = calculate_latency_metrics(SDB_result)
-    MDB_metrics = calculate_latency_metrics(MDB_result)
+def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms"):
+    SDB_metrics = calculate_latency_metrics(SDB_result, unit=unit)
+    MDB_metrics = calculate_latency_metrics(MDB_result, unit=unit)
 
     SDB_metrics_list = list(SDB_metrics.values())
     MDB_metrics_list = list(MDB_metrics.values())
