@@ -536,11 +536,10 @@ def sdb_q5(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         start_time = perf_counter_ns()
 
 		# query to be run
-        #TODO change to date instead of time::month
         db.query(""" 
         SELECT count() FROM order
         WHERE order_status IN ["delivered", "processing", "shipped"]
-        AND time::month(<datetime>order_date) <4 
+        AND order_date < "2023-04-01T00:00:00.000000Z"
         GROUP ALL;
         """)
 
@@ -563,11 +562,10 @@ def sdb_q6(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         start_time = perf_counter_ns()
 
 		# query to be run
-        #TODO change to date instead of time::month
         db.query(""" 
         SELECT count() FROM order
         WHERE order_status IN ["delivered", "processing", "shipped"]
-        AND time::month(<datetime>order_date) <4 
+        AND order_date < "2023-04-01T00:00:00.000000Z"
         AND ->product.artist.address.country ?= "England"
         GROUP ALL;
         """)
