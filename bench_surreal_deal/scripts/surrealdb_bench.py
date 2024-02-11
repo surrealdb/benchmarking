@@ -106,7 +106,7 @@ def sdb_generate_product_data(artist_data, amount=table_definition['product_amou
     rnd.seed(30)
 
     def product_generator() -> dict:
-        created_at = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
+        created_at = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+"Z"
         quantity = rnd.randint(1, 20)
         return {
             "id":"product:"+f"⟨{str(next(product_id))}⟩",
@@ -155,7 +155,7 @@ def sdb_generate_order_data(person_data, product_data, amount=table_definition['
         person_number = f('choice', items=person_id_count)
         product_number = f('choice', items=product_id_count)
         shipping_address = person_data[person_number]['address']
-        order_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
+        order_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+"Z"
         return {
             "id":f"order:"+f"⟨{str(next(order_id))}⟩",
             "in":person_data[person_number]['id'],
@@ -200,7 +200,7 @@ def sdb_generate_review_data(person_data, product_data, artist_data, amount=tabl
     product_id_count = range(table_definition['product_amount']-1)
 
     def review_generator() -> dict:
-        review_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)
+        review_date = dt.timestamp(TimestampFormat.ISO_8601, start=2023, end=2023)+"Z"
         return {
             "id":"review:"+f"⟨{str(next(review_id))}⟩",
             "person":person_data[f('choice', items=person_id_count)]['id'],
@@ -237,8 +237,10 @@ def sdb_insert_person(person_data, iterations=1, db=SurrealDB("ws://localhost:80
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
-
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def sdb_insert_product(product_data, iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
@@ -254,7 +256,10 @@ def sdb_insert_product(product_data, iterations=1, db=SurrealDB("ws://localhost:
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 
 def sdb_insert_order(order_data, iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
@@ -271,7 +276,10 @@ def sdb_insert_order(order_data, iterations=1, db=SurrealDB("ws://localhost:8000
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def sdb_insert_artist(artist_data, iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
@@ -287,7 +295,10 @@ def sdb_insert_artist(artist_data, iterations=1, db=SurrealDB("ws://localhost:80
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 
 def sdb_insert_review(review_data, iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
@@ -304,7 +315,10 @@ def sdb_insert_review(review_data, iterations=1, db=SurrealDB("ws://localhost:80
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 # Run the queries
 
@@ -338,7 +352,10 @@ def sdb_q1(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q2: lookup vs graph - one connection
 
@@ -368,7 +385,10 @@ def sdb_q2(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q2 variant: lookup vs graph - using in/out instead of arrow
 
@@ -398,7 +418,10 @@ def sdb_q2_variant(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q3: lookup vs graph (and link) - two connections
 
@@ -428,7 +451,12 @@ def sdb_q3(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
+
+# TODO add query with order by 
 
 ### Q4: Name and email for all customers in England
 
@@ -448,7 +476,10 @@ def sdb_q4_index(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def sdb_q4(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
@@ -468,7 +499,10 @@ def sdb_q4(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q5: standard count
 
@@ -488,7 +522,10 @@ def sdb_q5_index(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def sdb_q5(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
@@ -510,9 +547,12 @@ def sdb_q5(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
-### Q6: Count the number of confirmed orders in Q1 by artists in England
+### Q6: Count with relationship
 
 def sdb_q6(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
@@ -535,7 +575,10 @@ def sdb_q6(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 
 ### Q7: Delete a specific review
@@ -560,7 +603,10 @@ def sdb_q7(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q8: Delete reviews from a particular category
 
@@ -581,7 +627,10 @@ def sdb_q8_index(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 def sdb_q8(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     """
@@ -601,7 +650,10 @@ def sdb_q8(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q9: Update a customer address
 
@@ -632,7 +684,10 @@ def sdb_q9(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q10: Update discounts for products
 
@@ -653,7 +708,10 @@ def sdb_q10_index(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 
 def sdb_q10(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
@@ -675,7 +733,10 @@ def sdb_q10(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q11: Transaction - order from a new customer
 # TODO add variant with record links to compare directly against mongo
@@ -742,7 +803,10 @@ def sdb_q11(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
 
 ### Q12: Transaction - New Artist creates their first product
 # Transaction - New Artist creates their first product
@@ -806,4 +870,7 @@ def sdb_q12(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
         end_time = perf_counter_ns()
         duration = end_time - start_time
         result_list.append(duration)
-    return result_list
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list

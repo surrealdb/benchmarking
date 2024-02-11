@@ -105,15 +105,15 @@ def format_time_list(raw_time_list, unit="ms", precision=0, unit_label=False):
     return [format_time(raw_time, unit=unit, precision=precision, unit_label=unit_label) for raw_time in raw_time_list]
 
 
-def calculate_latency_metrics(result_list, unit="ms"):
+def calculate_latency_percentile(result_list, unit="ms"):
     """
-    Takes in a list of integers and calculates latency metrics
+    Takes in a list of integers and calculates percentile metrics
     """
     sorted_list = sorted(result_list)
     number_of_results = len(result_list)-1 # accounting for zero-based indexing
     
     # // same as using math floor
-    latency_metrics = {
+    percentile_metrics = {
         f"min({unit})": format_time(min(sorted_list), unit=unit),
         f"p1({unit})": format_time(sorted_list[(number_of_results * 1) // 100], unit=unit),
         f"p5({unit})": format_time(sorted_list[(number_of_results * 5) // 100], unit=unit),
@@ -124,16 +124,42 @@ def calculate_latency_metrics(result_list, unit="ms"):
         f"p99({unit})": format_time(sorted_list[(number_of_results * 99) // 100], unit=unit),
         f"max({unit})": format_time(max(sorted_list), unit=unit)
     }
-    return latency_metrics
+    return percentile_metrics
 
 def throughput_calc(query_count, duration, unit="s", precision=2):
     throughput = query_count / format_time(duration, unit=unit, precision=precision)
     return throughput
 
+def calculate_throughput_percentile(result_list, unit="s"):
+    """
+    Takes in a list of numbers and calculates percentile metrics
+    """
+    sorted_list = sorted(result_list)
+    number_of_results = len(result_list)-1 # accounting for zero-based indexing
+    
+    # // same as using math floor
+    percentile_metrics = {
+        f"min({unit})": min(sorted_list),
+        f"p1({unit})": sorted_list[(number_of_results * 1) // 100],
+        f"p5({unit})": sorted_list[(number_of_results * 5) // 100],
+        f"p25({unit})": sorted_list[(number_of_results * 25) // 100],
+        f"p50({unit})": sorted_list[(number_of_results * 50) // 100],
+        f"p75({unit})": sorted_list[(number_of_results * 75) // 100],
+        f"p90({unit})": sorted_list[(number_of_results * 90) // 100],
+        f"p99({unit})": sorted_list[(number_of_results * 99) // 100],
+        f"max({unit})": max(sorted_list)
+    }
+    return percentile_metrics
 
-def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms"):
-    SDB_metrics = calculate_latency_metrics(SDB_result, unit=unit)
-    MDB_metrics = calculate_latency_metrics(MDB_result, unit=unit)
+def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms", metric="latency"):
+    if metric == "latency":
+        SDB_metrics = calculate_latency_percentile(SDB_result, unit=unit)
+        MDB_metrics = calculate_latency_percentile(MDB_result, unit=unit)
+    elif metric == "throughput":
+        SDB_metrics = calculate_throughput_percentile(SDB_result, unit=unit)
+        MDB_metrics = calculate_throughput_percentile(MDB_result, unit=unit)
+    else:
+        raise Exception(f"metric can either be latency or throughput, not {metric}")
 
     SDB_metrics_list = list(SDB_metrics.values())
     MDB_metrics_list = list(MDB_metrics.values())

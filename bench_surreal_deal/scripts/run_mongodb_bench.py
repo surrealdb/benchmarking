@@ -190,6 +190,7 @@ for run in range(runs):
 
     bench_run_output_list_combined["insert_person"].append(insert_person)
     bench_run_output_list_combined["insert_artist"].append(insert_artist)
+    bench_run_output_list_combined["insert_product"].append(insert_product)
     bench_run_output_list_combined["insert_order"].append(insert_order)
     bench_run_output_list_combined["insert_review"].append(insert_review)
     bench_run_output_list_combined["insert_duration"].append(insert_duration)
