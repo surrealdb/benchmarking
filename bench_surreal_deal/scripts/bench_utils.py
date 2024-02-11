@@ -67,7 +67,7 @@ def get_gen_uuid4_unique_list(total_num, list_num, seed=42):
     return uuid_list
 
 
-def format_time(raw_time, unit="ms", precision=0, unit_label=False):
+def format_time(raw_time, unit="ms", precision=1, unit_label=False):
     """
     Takes in time in nanoseconds
     Returns formatted time in selected unit
@@ -114,7 +114,7 @@ def calculate_latency_metrics(result_list, unit="ms"):
     
     # // same as using math floor
     latency_metrics = {
-        f"min({unit})": format_time(min(result_list), unit=unit),
+        f"min({unit})": format_time(min(sorted_list), unit=unit),
         f"p1({unit})": format_time(sorted_list[(number_of_results * 1) // 100], unit=unit),
         f"p5({unit})": format_time(sorted_list[(number_of_results * 5) // 100], unit=unit),
         f"p25({unit})": format_time(sorted_list[(number_of_results * 25) // 100], unit=unit),
@@ -122,7 +122,7 @@ def calculate_latency_metrics(result_list, unit="ms"):
         f"p75({unit})": format_time(sorted_list[(number_of_results * 75) // 100], unit=unit),
         f"p90({unit})": format_time(sorted_list[(number_of_results * 90) // 100], unit=unit),
         f"p99({unit})": format_time(sorted_list[(number_of_results * 99) // 100], unit=unit),
-        f"max({unit})": format_time(max(result_list), unit=unit)
+        f"max({unit})": format_time(max(sorted_list), unit=unit)
     }
     return latency_metrics
 
@@ -141,7 +141,7 @@ def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms"):
         "Metric": list(SDB_metrics.keys()),
         "SurrealDB": SDB_metrics_list,
         "MongoDB": MDB_metrics_list,
-        "Difference": [round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
+        "Difference": [0 if sdb == 0 or mdb == 0 else round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
     }
     table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
     return table
