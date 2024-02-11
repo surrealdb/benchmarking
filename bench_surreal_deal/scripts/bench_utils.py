@@ -130,56 +130,6 @@ def throughput_calc(query_count, duration, unit="s", precision=2):
     throughput = query_count / format_time(duration, unit=unit, precision=precision)
     return throughput
 
-# foundation for plot_vals and plot_box adapted from here:
-# https://gitlab.com/Soha/termbox.py
-def plot_vals(vals, step, ticks, out):
-    i = -1
-    v = ticks[0]
-    box_plot = ""
-    while v < ticks[-1]:
-        if i == -1:
-            if v < out[0] and v + step > out[0]:
-                box_plot += "+"
-            elif v > vals[0]:
-                box_plot += "|"
-            else:
-                box_plot += " "
-        elif i == 0:
-            box_plot += "-"
-        elif i < 3:
-            if v < vals[2] and v + step > vals[2]:  # Median is only one point
-                box_plot += ":"
-            else:
-                box_plot += "="
-        elif i == 3:
-            if v >= vals[4] or v + step > ticks[-1]:
-                box_plot += "|"
-            else:
-                box_plot += "-"
-        if i == 4:
-            if v < out[1] and v + step > out[1]:
-                box_plot += "+"
-            else:
-                box_plot += " "
-        elif v > vals[i + 1]:
-            i += 1
-
-        v += step
-    return box_plot
-
-def plot_box(data, nticks=5):
-    box = [5, 25, 50, 75, 95]
-    df = np.array(data, dtype=np.float64)
-    vals = np.quantile(df, [x / 100 for x in box], method="lower")
-    out = np.quantile(df, [0.01, 0.99], method="lower")
-
-    lo, hi = (df.min(), df.max())
-
-    ticks = np.unique(np.linspace(lo, math.ceil(hi), nticks, dtype=int))
-    # The step is the *width* of a character
-    step = (ticks.max() - ticks.min()) / 50
-
-    return plot_vals(vals, step, ticks, out)
 
 def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms"):
     SDB_metrics = calculate_latency_metrics(SDB_result, unit=unit)
@@ -191,7 +141,7 @@ def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms"):
         "Metric": list(SDB_metrics.keys()),
         "SurrealDB": SDB_metrics_list,
         "MongoDB": MDB_metrics_list,
-        "Difference": [round((((mdb - sdb) / sdb) * 100), 1) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
+        "Difference": [round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
     }
     table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
     return table
