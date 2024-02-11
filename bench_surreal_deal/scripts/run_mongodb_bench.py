@@ -4,7 +4,7 @@ import json
 
 from pymongo import MongoClient
 
-import mongodb_bench as mdb
+import define_mongodb_bench as mdb
 
 from bench_utils import format_time
 

@@ -4,7 +4,7 @@ import json
 
 from surrealdb import SurrealDB
 
-import surrealdb_bench as sdb
+import define_surrealdb_bench as sdb
 
 from bench_utils import format_time
 
