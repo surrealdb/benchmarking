@@ -520,8 +520,9 @@ def mdb_q2_variant(iterations=1, client=MongoClient("mongodb://localhost:27017/"
         return result_list
 
 ### Q3: lookup vs graph - two connections
-# TODO index is not triggered
+# TODO index is not triggered since its nested
 # might work with $unwind?
+# or might just need to leave as is
 
 def mdb_q3(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
     """
@@ -1041,6 +1042,34 @@ def mdb_q12(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidR
                 "created_at": datetime.now(tz=timezone.utc)
             }
         })
+
+        end_time = perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
+
+### Q13: Order by
+
+def mdb_q13(iterations=1, client=MongoClient("mongodb://localhost:27017/", uuidRepresentation='standard')):
+    """
+    Run mongodb query
+    """
+    # setup
+    db = client["surreal_bench"]
+    person = db["person"]
+
+    result_list = []
+    for _ in range(iterations):
+        start_time = perf_counter_ns()
+
+		# query to be run
+        list(person.find(
+            {},
+            { "_id": 0, "name": 1, "email": 1 }
+        ).sort("name"))
 
         end_time = perf_counter_ns()
         duration = end_time - start_time

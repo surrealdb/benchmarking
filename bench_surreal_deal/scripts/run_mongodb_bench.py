@@ -48,6 +48,7 @@ bench_run_output_list_combined = {
         "q4": [],
         "q5": [],
         "q6": [],
+        "q13": [],
         "read_filter_duration": [],
         "read_relationships_duration": [],
         "read_aggregation_duration": [],
@@ -107,12 +108,13 @@ for run in range(runs):
     ## read
     read_filter_start = perf_counter_ns()
 
-    ### filter
+    ### filter & order
     q4 = mdb.mdb_q4(client=connection)
+    q13 = mdb.mdb_q13(client=connection)
 
     read_filter_end = perf_counter_ns()
     read_filter_duration = read_filter_end - read_filter_start
-    print("read filter latency(ms):", format_time(read_filter_duration, unit="ms", precision=2, unit_label=True))
+    print("read filter & order latency(ms):", format_time(read_filter_duration, unit="ms", precision=2, unit_label=True))
 
     read_relationships_start = perf_counter_ns()
 
@@ -207,6 +209,7 @@ for run in range(runs):
     bench_run_output_list_combined["q4"].append(q4)
     bench_run_output_list_combined["q5"].append(q5)
     bench_run_output_list_combined["q6"].append(q6)
+    bench_run_output_list_combined["q13"].append(q13)
     bench_run_output_list_combined["read_filter_duration"].append(read_filter_duration)
     bench_run_output_list_combined["read_relationships_duration"].append(read_relationships_duration)
     bench_run_output_list_combined["read_aggregation_duration"].append(read_aggregation_duration)

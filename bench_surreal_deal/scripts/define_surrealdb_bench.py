@@ -456,8 +456,6 @@ def sdb_q3(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
     else:
         return result_list
 
-# TODO add query with order by 
-
 ### Q4: Name and email for all customers in England
 
 def sdb_q4_index(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
@@ -863,6 +861,31 @@ def sdb_q12(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
                 }
         RETURN NONE;
         COMMIT TRANSACTION;
+        """)
+
+        end_time = perf_counter_ns()
+        duration = end_time - start_time
+        result_list.append(duration)
+    if len(result_list) < 2:
+        return result_list[0]
+    else:
+        return result_list
+
+### Q13: Order by
+
+def sdb_q13(iterations=1, db=SurrealDB("ws://localhost:8000/test/test")):
+    """
+    Run surrealdb query
+    """
+    result_list = []
+    for _ in range(iterations):
+        start_time = perf_counter_ns()
+
+		# query to be run
+        db.query(""" 
+        SELECT name, email 
+        FROM person
+        ORDER BY name
         """)
 
         end_time = perf_counter_ns()

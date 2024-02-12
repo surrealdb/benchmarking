@@ -254,13 +254,18 @@ unit="us")}
     mdb_results["q3"]
 )}
 
-# TODO add query with order by 
-
 ### Projection with filter
 
 {create_markdown_metrics_table(
     sdb_results["q4"],
     mdb_results["q4"]
+)}
+
+### Projection with order by
+
+{create_markdown_metrics_table(
+    sdb_results["q13"],
+    mdb_results["q13"]
 )}
 
 ### Count with filter
