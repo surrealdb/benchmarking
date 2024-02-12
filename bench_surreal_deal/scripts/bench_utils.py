@@ -127,7 +127,7 @@ def calculate_latency_percentile(result_list, unit="ms"):
 
 def throughput_calc(query_count, duration, unit="s", precision=1):
     throughput = query_count / format_time(duration, unit=unit, precision=precision)
-    return throughput
+    return round(throughput, precision)
 
 def calculate_throughput_percentile(result_list, unit="s"):
     """
