@@ -7,11 +7,11 @@ from tabulate import tabulate
 from surrealdb import SurrealDB
 
 table_definition = {
-    "person_amount": 10000,
-    "product_amount": 10000,
-    "order_amount":100000,
-    "artist_amount": 5000,
-    "review_amount":20000
+    "person_amount": 1000,
+    "product_amount": 1000,
+    "order_amount":10000,
+    "artist_amount": 500,
+    "review_amount":2000
 }
 
 def insert_relate_statement(table_data:list[dict], db_connection=SurrealDB("ws://localhost:8000/test/test")) -> str:

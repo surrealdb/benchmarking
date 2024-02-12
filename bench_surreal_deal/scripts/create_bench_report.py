@@ -24,11 +24,11 @@ This benchmark compares SurrealDB and MongoDB performance across a variety of CR
 
 It consists of the following tables:
 
-{print(tabulate(
+{tabulate(
     {
         "Table name": table_definition.keys(),
         "Number of records": table_definition.values()
-    }, headers="keys", tablefmt="github"))}
+    }, headers="keys", tablefmt="github")}
 
 ### Overall results
 
@@ -101,6 +101,7 @@ Each category consists of 2 or more queries
 )}
 
 #### Transaction
+**NOTE:** MongoDB's is not a real transaction yet as it doesn't run locally
 
 {create_markdown_metrics_table(
     sdb_results["transactions_duration"],
@@ -200,6 +201,7 @@ Therefore this query cannot make use of the index that was created for it.
 )}
 
 ### Transaction insert & update
+**NOTE:** MongoDB's is not a real transaction yet as it doesn't run locally
 
 {create_markdown_metrics_table(
     sdb_results["tx1_insert_update"],
@@ -207,6 +209,7 @@ Therefore this query cannot make use of the index that was created for it.
 unit="us")}
 
 ### Transaction insert x 2
+**NOTE:** MongoDB's is not a real transaction yet as it doesn't run locally
 
 {create_markdown_metrics_table(
     sdb_results["tx2_insert"],
