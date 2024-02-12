@@ -1,7 +1,7 @@
 import pathlib
 import json
 
-from bench_utils import create_markdown_summary_table, create_markdown_metrics_table
+from bench_utils import create_markdown_summary_table, create_markdown_metrics_table, table_definition
 
 # create report
 
@@ -19,6 +19,8 @@ report = f"""
 # Surreal bench
 
 This benchmark compares SurrealDB and MongoDB performance across a variety of CRUD queries.
+
+{print(table_definition)}
 
 ### Overall results
 
