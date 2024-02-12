@@ -1,7 +1,7 @@
 import pathlib
 import json
 
-from bench_utils import create_markdown_metrics_table
+from bench_utils import create_markdown_summary_table, create_markdown_metrics_table
 
 # create report
 
@@ -22,11 +22,10 @@ This benchmark compares SurrealDB and MongoDB performance across a variety of CR
 
 ### Overall results
 
-| Metric | SurrealDB | MongoDB | Difference
-P99 throughput (QPS)
-P99 latency (ms)
-P99 read latency (ms)
-P99 write latency (ms) 
+{create_markdown_summary_table(
+    sdb_results, 
+    mdb_results
+)}
 
 Total number of queries per run: {sdb_results["total_queries_count"][0]}
 

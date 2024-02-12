@@ -171,6 +171,34 @@ def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms", metric="lat
     table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
     return table
 
+def create_markdown_summary_table(SDB_result, MDB_result, unit="ms"):
+
+    SDB_metrics = {
+        "P99 throughput (QPS)": calculate_throughput_percentile(SDB_result["total_throughput_qps"], unit=unit)[f"p99({unit})"],
+        "P99 latency (ms)": calculate_latency_percentile(SDB_result["total_time_duration"], unit=unit)[f"p99({unit})"],
+        "P99 read latency (ms)": calculate_latency_percentile(SDB_result["total_read_duration"], unit=unit)[f"p99({unit})"],
+        "P99 write latency (ms)": calculate_latency_percentile(SDB_result["total_write_duration"], unit=unit)[f"p99({unit})"]
+    }
+
+    MDB_metrics = {
+        "P99 throughput (QPS)": calculate_throughput_percentile(MDB_result["total_throughput_qps"], unit=unit)[f"p99({unit})"],
+        "P99 latency (ms)": calculate_latency_percentile(MDB_result["total_time_duration"], unit=unit)[f"p99({unit})"],
+        "P99 read latency (ms)": calculate_latency_percentile(MDB_result["total_read_duration"], unit=unit)[f"p99({unit})"],
+        "P99 write latency (ms)": calculate_latency_percentile(MDB_result["total_write_duration"], unit=unit)[f"p99({unit})"]
+    }
+
+    SDB_metrics_list = list(SDB_metrics.values())
+    MDB_metrics_list = list(MDB_metrics.values())
+    reshaped_dict = {
+        "Metric": list(SDB_metrics.keys()),
+        "SurrealDB": SDB_metrics_list,
+        "MongoDB": MDB_metrics_list,
+        "Difference": [0 if sdb == 0 or mdb == 0 else round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
+    }
+    table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
+    return table
+
+
 def run_surrealdb_query(operation, query, iterations=1):
     """
     Run templated surrealdb queries
