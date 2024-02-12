@@ -1,6 +1,8 @@
 import pathlib
 import json
 
+from tabulate import tabulate
+
 from bench_utils import create_markdown_summary_table, create_markdown_metrics_table, table_definition
 
 # create report
@@ -20,7 +22,13 @@ report = f"""
 
 This benchmark compares SurrealDB and MongoDB performance across a variety of CRUD queries.
 
-{print(table_definition)}
+It consists of the following tables:
+
+{print(tabulate(
+    {
+        "Table name": table_definition.keys(),
+        "Number of records": table_definition.values()
+    }, headers="keys", tablefmt="github"))}
 
 ### Overall results
 
