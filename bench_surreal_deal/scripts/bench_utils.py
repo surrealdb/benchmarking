@@ -125,7 +125,7 @@ def calculate_latency_percentile(result_list, unit="ms"):
     }
     return percentile_metrics
 
-def throughput_calc(query_count, duration, unit="s", precision=2):
+def throughput_calc(query_count, duration, unit="s", precision=1):
     throughput = query_count / format_time(duration, unit=unit, precision=precision)
     return throughput
 
@@ -166,7 +166,7 @@ def create_markdown_metrics_table(SDB_result, MDB_result, unit="ms", metric="lat
         "Metric": list(SDB_metrics.keys()),
         "SurrealDB": SDB_metrics_list,
         "MongoDB": MDB_metrics_list,
-        "Difference": [0 if sdb == 0 or mdb == 0 else round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
+        "Difference (%)": [0 if sdb == 0 or mdb == 0 else round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
     }
     table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
     return table
@@ -193,7 +193,7 @@ def create_markdown_summary_table(SDB_result, MDB_result, unit="ms"):
         "Metric": list(SDB_metrics.keys()),
         "SurrealDB": SDB_metrics_list,
         "MongoDB": MDB_metrics_list,
-        "Difference": [0 if sdb == 0 or mdb == 0 else round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
+        "Difference (%)": [0 if sdb == 0 or mdb == 0 else round((((mdb - sdb) / sdb) * 100), 2) for sdb, mdb in zip(SDB_metrics_list, MDB_metrics_list)]
     }
     table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
     return table

@@ -6,7 +6,7 @@ from surrealdb import SurrealDB
 
 import define_surrealdb_bench as sdb
 
-from bench_utils import format_time
+from bench_utils import format_time, throughput_calc
 
 # create the data
 
@@ -190,7 +190,7 @@ for run in range(runs):
     transactions_count = 2
 
     total_queries_count = insert_query_count + index_query_count + read_query_count + update_query_count + delete_query_count + transactions_count
-    total_throughput_qps = total_queries_count / format_time(total_time_duration, unit="s", precision=2, unit_label=False)
+    total_throughput_qps = throughput_calc(total_queries_count, total_time_duration)
     print("throughput(qps): ", round(total_throughput_qps, 1))
 
     # create JSON output
