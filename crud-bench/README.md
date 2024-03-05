@@ -9,7 +9,12 @@ Eg.:
 - Work on indexes
 - Work on query planner and execution plan
 
-## How to use?
+## Requirements
+
+- Docker
+- RustC / Cargo
+
+## Usage
 
 ```bash
 cargo run -r -- --help
