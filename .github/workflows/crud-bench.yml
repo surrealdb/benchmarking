@@ -1,0 +1,54 @@
+name: Crud-bench
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+  merge_group:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: crud-bench
+
+jobs:
+
+  format:
+    name: Crud-bench
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Check format
+        run: cargo fmt --all --check
+
+      - name: Run clippy
+        run: cargo clippy --tests -- -D warnings
+
+      - name: Test
+        run: cargo test
+
+      - name: Build
+        run: cargo build
+
+      - name: Bench Dry
+        run: cargo run -- -d dry -s 10000 -t 3
+
+      - name: Bench Postgres
+        run: cargo run -- -d postgresql -s 10000 -t 3
+
+      - name: Bench SurrealDB/Memory
+        run: cargo run -- -d surrealdb-memory -s 10000 -t 3
+
+      - name: Bench SurrealDB/RocksDB
+        run: cargo run -- -d surrealdb-rocksdb -s 10000 -t 3
+
