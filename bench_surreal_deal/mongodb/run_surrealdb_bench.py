@@ -2,26 +2,31 @@ from time import perf_counter_ns
 import pathlib
 import json
 
-from pymongo import MongoClient
+from surrealdb import SurrealDB
 
-import define_mongodb_bench as mdb
+import define_surrealdb_bench as sdb
 
 from bench_utils import format_time, throughput_calc
 
 # create the data
 
-## mongodb
-person_data = mdb.mdb_generate_person_data()
-artist_data = mdb.mdb_generate_artist_data()
-product_data = mdb.mdb_generate_product_data(artist_data)
-order_data = mdb.mdb_generate_order_data(person_data, product_data)
-review_data = mdb.mdb_generate_review_data(person_data, product_data, artist_data)
+## surrealdb
+person_data = sdb.sdb_generate_person_data()
+artist_data = sdb.sdb_generate_artist_data()
+product_data = sdb.sdb_generate_product_data(artist_data)
+order_data = sdb.sdb_generate_order_data(person_data, product_data)
+review_data = sdb.sdb_generate_review_data(person_data, product_data, artist_data)
 
-# run mongodb bench
+# run surrealdb bench
 
-MONGODB_URI = "mongodb://localhost:27017/"
+SURREALDB_URI = "ws://localhost:8000/test/test"
 
-connection = MongoClient(MONGODB_URI, uuidRepresentation='standard')
+db = SurrealDB(SURREALDB_URI)
+
+db.signin({
+    "username": "root",
+    "password": "root",
+})
 
 runs = 10
 
@@ -75,7 +80,7 @@ bench_run_output_list_combined = {
 
 for run in range(runs):
     # in case it exists drop the database
-    connection.drop_database('surreal_bench')
+    db.query("REMOVE DATABASE test")
 
     print(f"Run #{run+1}")
     wall_time_start = perf_counter_ns()
@@ -83,11 +88,11 @@ for run in range(runs):
     ## insert the data
     insert_start = perf_counter_ns()
 
-    insert_person = mdb.mdb_insert_person(person_data)
-    insert_artist = mdb.mdb_insert_artist(artist_data)
-    insert_product = mdb.mdb_insert_product(product_data)
-    insert_order = mdb.mdb_insert_order(order_data)
-    insert_review = mdb.mdb_insert_review(review_data)
+    insert_person = sdb.sdb_insert_person(person_data)
+    insert_artist = sdb.sdb_insert_artist(artist_data)
+    insert_product = sdb.sdb_insert_product(product_data)
+    insert_order = sdb.sdb_insert_order(order_data)
+    insert_review = sdb.sdb_insert_review(review_data)
 
     insert_end = perf_counter_ns()
     insert_duration = insert_end - insert_start
@@ -96,10 +101,10 @@ for run in range(runs):
     ## create indexes
     index_start = perf_counter_ns()
 
-    q4_index = mdb.mdb_q4_index(client=connection)
-    q5_index = mdb.mdb_q5_index(client=connection)
-    q8_index = mdb.mdb_q8_index(client=connection)
-    q10_index = mdb.mdb_q10_index(client=connection)
+    q4_index = sdb.sdb_q4_index(db=db)
+    q5_index = sdb.sdb_q5_index(db=db)
+    q8_index = sdb.sdb_q8_index(db=db)
+    q10_index = sdb.sdb_q10_index(db=db)
 
     index_end = perf_counter_ns()
     index_duration = index_end - index_start
@@ -109,8 +114,8 @@ for run in range(runs):
     read_filter_start = perf_counter_ns()
 
     ### filter & order
-    q4 = mdb.mdb_q4(client=connection)
-    q13 = mdb.mdb_q13(client=connection)
+    q4 = sdb.sdb_q4(db=db)
+    q13 = sdb.sdb_q13(db=db)
 
     read_filter_end = perf_counter_ns()
     read_filter_duration = read_filter_end - read_filter_start
@@ -119,9 +124,9 @@ for run in range(runs):
     read_relationships_start = perf_counter_ns()
 
     ### relationships
-    q1 = mdb.mdb_q1(client=connection)
-    q2 = mdb.mdb_q2(client=connection)
-    q3 = mdb.mdb_q3(client=connection)
+    q1 = sdb.sdb_q1(db=db)
+    q2 = sdb.sdb_q2(db=db)
+    q3 = sdb.sdb_q3(db=db)
 
     read_relationships_end = perf_counter_ns()
     read_relationships_duration = read_relationships_end - read_relationships_start
@@ -129,8 +134,8 @@ for run in range(runs):
 
     read_aggregation_start = perf_counter_ns()
     ### aggregation
-    q5 = mdb.mdb_q5(client=connection)
-    q6 = mdb.mdb_q6(client=connection)
+    q5 = sdb.sdb_q5(db=db)
+    q6 = sdb.sdb_q6(db=db)
 
     read_aggregation_end = perf_counter_ns()
     read_aggregation_duration = read_aggregation_end - read_aggregation_start
@@ -139,8 +144,8 @@ for run in range(runs):
     ## update 
     update_start = perf_counter_ns()
 
-    update_one = mdb.mdb_q9(client=connection)
-    update_many = mdb.mdb_q10(client=connection)
+    update_one = sdb.sdb_q9(db=db)
+    update_many = sdb.sdb_q10(db=db)
 
     update_end = perf_counter_ns()
     update_duration = update_end - update_start
@@ -149,8 +154,8 @@ for run in range(runs):
     ## delete
     delete_start = perf_counter_ns()
 
-    delete_one = mdb.mdb_q7(client=connection)
-    delete_many = mdb.mdb_q8(client=connection)
+    delete_one = sdb.sdb_q7(db=db)
+    delete_many = sdb.sdb_q8(db=db)
 
     delete_end = perf_counter_ns()
     delete_duration = delete_end - delete_start
@@ -159,8 +164,8 @@ for run in range(runs):
     ## transactions
     transactions_start = perf_counter_ns()
 
-    tx1_insert_update = mdb.mdb_q11(client=connection)
-    tx2_insert = mdb.mdb_q12(client=connection)
+    tx1_insert_update = sdb.sdb_q11(db=db)
+    tx2_insert = sdb.sdb_q12(db=db)
 
     transactions_end = perf_counter_ns()
     transactions_duration = transactions_end - transactions_start
@@ -281,7 +286,7 @@ for run in range(runs):
     # bench_run_output_list_each.append(bench_run_record)
 
 # Output the results
-export_path = pathlib.Path(__file__).parents[1] / "output_files"
+export_path = pathlib.Path(__file__).parents[0] / "output_files"
 
-with open(export_path / pathlib.Path("mongodb_bench_output.json"), "w") as file:
+with open(export_path / pathlib.Path("surrealdb_bench_output.json"), "w") as file:
     json.dump(bench_run_output_list_combined, file, ensure_ascii=False)
