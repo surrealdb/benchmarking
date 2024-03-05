@@ -16,7 +16,7 @@ defaults:
 jobs:
 
   format:
-    name: Check format
+    name: Checks
     runs-on: ubuntu-latest
     steps:
 
@@ -31,35 +31,11 @@ jobs:
       - name: Check format
         run: cargo fmt --all --check
 
-  check:
-    name: Check workspace
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
-      - name: Check workspace
-        run: cargo check --workspace
-
-  clippy:
-    name: Check clippy
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
       - name: Run clippy
         run: cargo clippy --all-targets --all-features --tests -- -D warnings
+
+      - name: Check
+        run: cargo check --all-features
 
   bench:
     name: Run benchmarks

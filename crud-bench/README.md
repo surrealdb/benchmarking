@@ -1,13 +1,13 @@
-# sur-bench
+# crud-bench
 
 ## Purpose
 
-The goal of this bench is for the developers of features in SurrealDB to check how it impacts the crud performances.
+The goal of this benchmark is for developers working on features in SurrealDB to assess their impact on CRUD performance.
 
 Eg.:
-- New operator
-- New indexes
-- Query execution
+- Testing a new operator
+- Work on indexes
+- Work on query planner and execution plan
 
 ## How to use?
 
