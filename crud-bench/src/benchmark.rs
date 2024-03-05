@@ -121,7 +121,7 @@ impl Benchmark {
 		let error = Arc::new(AtomicBool::new(false));
 		let time = Instant::now();
 		let percent = Arc::new(AtomicU8::new(0));
-		print!("0%");
+		print!("\r{operation:?} 0%");
 		scope(|s| {
 			let current = Arc::new(AtomicI32::new(0));
 			for thread_number in 0..self.threads {
@@ -148,12 +148,12 @@ impl Benchmark {
 								let new_percent = if sample == 0 {
 									0u8
 								} else {
-									(sample * 100 / self.samples) as u8
+									(sample * 20 / self.samples) as u8
 								};
 								let old_percent = percent.load(Ordering::Relaxed);
 								if new_percent > old_percent {
 									percent.store(new_percent, Ordering::Relaxed);
-									print!("\r{new_percent}%");
+									print!("\r{operation:?} {}%", new_percent * 5);
 									io::stdout().flush()?;
 								}
 							}
@@ -179,7 +179,8 @@ impl Benchmark {
 				});
 			}
 		});
-		println!("\r100%");
+		println!("\r{operation:?} 100%");
+		io::stdout().flush()?;
 		if error.load(Ordering::Relaxed) {
 			bail!("Benchmark error");
 		}

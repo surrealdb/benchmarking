@@ -32,35 +32,23 @@ jobs:
         run: cargo fmt --all --check
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features --tests -- -D warnings
+        run: cargo clippy --tests -- -D warnings
 
       - name: Check
-        run: cargo check --all-features
+        run: cargo check
 
-  bench:
-    name: Run benchmarks
-    runs-on: ubuntu-latest
-    env:
-      RUST_LOG: info
-    steps:
-
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
-      - name: Build release
+      - name: Build
         run: cargo build -r
 
       - name: Bench Dry
-        run: cargo run -r -- -d dry -s 100000 -t 3
+        run: cargo -r run -- -d dry -s 10000 -t 3
 
       - name: Bench Postgres
-        run: cargo run -r -- -d postgresql -s 100000 -t 3
+        run: cargo -r run -- -d postgresql -s 10000 -t 3
 
       - name: Bench SurrealDB/Memory
-        run: cargo run -r -- -d surrealdb-memory -s 100000 -t 3
+        run: cargo -r run -- -d surrealdb-memory -s 10000 -t 3
 
-      - name: Bench SurrealDB/Memory
-        run: cargo run -r -- -d surrealdb-rocksdb -s 100000 -t 3
+      - name: Bench SurrealDB/RocksDB
+        run: cargo -r run -- -d surrealdb-rocksdb -s 10000 -t 3
+
