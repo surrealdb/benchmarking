@@ -22,3 +22,9 @@ On a compatible system, follow these steps:
 * Install foundationdb-clients=7.1.37 (https://github.com/apple/foundationdb/releases/download/7.1.37/foundationdb-clients_7.1.37-1_amd64.deb)
 * `make build`
 * `./bin/go-ycsb run foundationdb -P workloads/basic`
+
+## crud-bench
+
+A benchmark for developers working on features in SurrealDB to check how it impacts CRUD performance.
+
+[crub-bench](./crub-bench)
