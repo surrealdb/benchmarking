@@ -27,4 +27,4 @@ On a compatible system, follow these steps:
 
 A benchmark for developers working on features in SurrealDB to check how it impacts CRUD performance.
 
-[crub-bench](crub-bench/README.md)
+[crub-bench](/tree/main/crud-bench)
