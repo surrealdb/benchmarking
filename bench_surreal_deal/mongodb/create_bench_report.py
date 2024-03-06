@@ -7,7 +7,7 @@ from bench_utils import create_markdown_summary_table, create_markdown_metrics_t
 
 # create report
 
-output_files_path = pathlib.Path(__file__).parents[1] / "output_files"
+output_files_path = pathlib.Path(__file__).parents[0] / "output_files"
 
 # Get SurrealDB results
 with open(output_files_path / pathlib.Path("surrealdb_bench_output.json"), "r") as file:
@@ -298,7 +298,7 @@ unit="us")}
 print(report)
 
 # Output the results
-export_path = pathlib.Path(__file__).parents[1] / "output_files"
+export_path = pathlib.Path(__file__).parents[0] / "output_files"
 
 with open(export_path / pathlib.Path("Bench_report_output.md"), "w") as file:
     file.write(report)
