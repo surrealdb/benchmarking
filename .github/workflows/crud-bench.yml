@@ -55,3 +55,6 @@ jobs:
       - name: Bench SurrealDB/RocksDB
         run: cargo run -- -d surrealdb-rocksdb -s 10000 -t 3
 
+      - name: Bench SurrealDB/KV
+        run: cargo run -- -d surrealdb-kv -s 10000 -t 3
+
