@@ -4,7 +4,7 @@ use log::info;
 
 use crate::benchmark::{Benchmark, BenchmarkResult, DryClientProvider};
 use crate::docker::DockerContainer;
-use crate::mongodb::MONGODB_DOCKER_PARAMS;
+use crate::mongodb::{MongoDBClientProvider, MONGODB_DOCKER_PARAMS};
 use crate::postgres::{PostgresClientProvider, POSTGRES_DOCKER_PARAMS};
 use crate::surrealdb::{
 	SurrealDBClientProvider, SURREAL_MEMORY_DOCKER_PARAMS, SURREAL_ROCKSDB_DOCKER_PARAMS,
@@ -71,7 +71,7 @@ impl Database {
 			| Database::SurrealdbMemory
 			| Database::SurrealdbRocksdb
 			| Database::SurrealdbSpeedb => benchmark.run(SurrealDBClientProvider::default()),
-			Database::Mongodb => todo!(),
+			Database::Mongodb => benchmark.run(MongoDBClientProvider::default()),
 			Database::Postgresql => benchmark.run(PostgresClientProvider::default()),
 		}
 	}

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use mongodb::bson::doc;
-use mongodb::bson::oid::ObjectId;
-use mongodb::{options::ClientOptions, Client, Collection};
+use mongodb::options::IndexOptions;
+use mongodb::{options::ClientOptions, Client, Collection, IndexModel};
 use serde::{Deserialize, Serialize};
 
 use crate::benchmark::{BenchmarkClient, BenchmarkClientProvider, Record};
@@ -21,7 +21,7 @@ impl BenchmarkClientProvider<MongoDBClient> for MongoDBClientProvider {
 		let client_options = ClientOptions::parse("mongodb://root:root@localhost:27017").await?;
 		let client = Client::with_options(client_options)?;
 		let db = client.database("crud-bench");
-		let collection = db.collection::<MongoDbRecord>("record");
+		let collection = db.collection::<MongoDBRecord>("record");
 		Ok(MongoDBClient {
 			collection,
 		})
@@ -29,16 +29,16 @@ impl BenchmarkClientProvider<MongoDBClient> for MongoDBClientProvider {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MongoDbRecord {
-	_id: ObjectId,
+struct MongoDBRecord {
+	id: i32,
 	text: String,
 	integer: i32,
 }
 
-impl MongoDbRecord {
+impl MongoDBRecord {
 	fn new(key: i32, record: &Record) -> Self {
 		Self {
-			_id: key.into(),
+			id: key,
 			text: record.text.clone(),
 			integer: record.integer,
 		}
@@ -46,38 +46,41 @@ impl MongoDbRecord {
 }
 
 pub(crate) struct MongoDBClient {
-	collection: Collection<MongoDbRecord>,
+	collection: Collection<MongoDBRecord>,
 }
 
 impl BenchmarkClient for MongoDBClient {
 	async fn prepare(&mut self) -> Result<()> {
+		let index_options = IndexOptions::builder().unique(true).build();
+		let index_model =
+			IndexModel::builder().keys(doc! { "id": 1 }).options(index_options).build();
+		self.collection.create_index(index_model, None).await?;
 		Ok(())
 	}
 
 	async fn create(&mut self, key: i32, record: &Record) -> Result<()> {
-		let doc = MongoDbRecord::new(key, record);
-		let res = self.collection.insert_one(doc, None).await?;
-		assert_eq!(res.inserted_id, doc._id);
+		let doc = MongoDBRecord::new(key, record);
+		self.collection.insert_one(doc, None).await?;
 		Ok(())
 	}
 
 	async fn read(&mut self, key: i32) -> Result<()> {
-		let filter = doc! { "_id": key };
+		let filter = doc! { "id": key };
 		let doc = self.collection.find_one(Some(filter), None).await?;
-		assert_eq!(doc.unwrap()._id, key.into());
+		assert_eq!(doc.unwrap().id, key);
 		Ok(())
 	}
 
 	async fn update(&mut self, key: i32, record: &Record) -> Result<()> {
-		let doc = MongoDbRecord::new(key, record);
-		let filter = doc! { "_id": key };
+		let doc = MongoDBRecord::new(key, record);
+		let filter = doc! { "id": key };
 		let res = self.collection.replace_one(filter, doc, None).await?;
 		assert_eq!(res.modified_count, 1);
 		Ok(())
 	}
 
 	async fn delete(&mut self, key: i32) -> Result<()> {
-		let filter = doc! { "_id": key };
+		let filter = doc! { "id": key };
 		let res = self.collection.delete_one(filter, None).await?;
 		assert_eq!(res.deleted_count, 1);
 		Ok(())
