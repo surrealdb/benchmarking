@@ -11,7 +11,6 @@ The goal of this benchmark is show performance differences with MongoDB across a
 - [SurrealDB](https://surrealdb.com/install) 
 - [MongoDB](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/)
 
-
 ## Usage
 
 Start up a SurrealDB server:

@@ -1,4 +1,4 @@
-# bench surreal deal
+# surreal-deal
 
 ## Purpose
 
@@ -8,7 +8,6 @@ The goal of this benchmark is show performance differences with other databases 
 
 - Python
 - [Poetry package manager](https://python-poetry.org/docs/#installation)
-
 
 ## Usage
 
