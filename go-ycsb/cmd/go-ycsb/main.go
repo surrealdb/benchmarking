@@ -64,8 +64,6 @@ import (
 	_ "github.com/pingcap/go-ycsb/db/cassandra"
 	// Register mongodb database
 	_ "github.com/pingcap/go-ycsb/db/mongodb"
-	// Register mongodb (with transactions) database
-	_ "github.com/pingcap/go-ycsb/db/mongodb_txn"
 	// Register redis database
 	_ "github.com/pingcap/go-ycsb/db/redis"
 	// Register boltdb database
