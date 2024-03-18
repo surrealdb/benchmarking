@@ -132,7 +132,6 @@ Common configurations:
 |tidb.cluster_index|true|Whether to use cluster index, for TiDB only|
 |tidb.instances|""|Comma-seperated address list of tidb instances (eg: `tidb-0:4000,tidb-1:4000`)|
 
-
 ### TiKV
 
 |field|default value|description|
