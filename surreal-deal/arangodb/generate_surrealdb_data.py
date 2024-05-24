@@ -1,6 +1,7 @@
 # import required modules
 import pathlib
 from random import Random
+import json
 
 from mimesis.locales import Locale
 from mimesis.keys import maybe
@@ -332,13 +333,24 @@ COMMIT TRANSACTION;
 """
 )
 
-file_path = pathlib.Path(__file__).parents[0] / "output_files" / "surreal_deal.surql"
+file_path = pathlib.Path(__file__).parents[0] / "output_files" / "surrealdb_data"
 
-with open(file_path, 'w') as f:
+with open(file_path / pathlib.Path("surreal_deal.surql"), 'w') as f:
     f.write(doc)
 
-# # Output the results
-# export_path = pathlib.Path(__file__).parents[0] / "output_files"
+## writing to JSON files
 
-# with open(export_path / pathlib.Path("Bench_report_output.md"), "w") as file:
-#     file.write(report)
+with open(file_path / pathlib.Path("person_data.json"), "w") as file:
+    json.dump(person_data, file, ensure_ascii=False)
+
+with open(file_path / pathlib.Path("artist_data.json"), "w") as file:
+    json.dump(artist_data, file, ensure_ascii=False)
+
+with open(file_path / pathlib.Path("product_data.json"), "w") as file:
+    json.dump(product_data, file, ensure_ascii=False)
+
+with open(file_path / pathlib.Path("order_data.json"), "w") as file:
+    json.dump(order_data, file, ensure_ascii=False)
+
+with open(file_path / pathlib.Path("review_data.json"), "w") as file:
+    json.dump(review_data, file, ensure_ascii=False)
