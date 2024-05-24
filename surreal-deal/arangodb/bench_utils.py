@@ -195,7 +195,7 @@ def create_markdown_metrics_table(SDB_result, ADB_result, unit="ms", metric="lat
     reshaped_dict = {
         "Metric": list(SDB_metrics.keys()),
         "SurrealDB": SDB_metrics_list,
-        "MongoDB": ADB_metrics_list,
+        "ArangoDB": ADB_metrics_list,
         "Difference (%)": [0 if sdb == 0 or adb == 0 else round((((adb - sdb) / sdb) * 100), 2) for sdb, adb in zip(SDB_metrics_list, ADB_metrics_list)]
     }
     table = tabulate(reshaped_dict, headers="keys", tablefmt="github")
@@ -222,7 +222,7 @@ def create_markdown_summary_table(SDB_result, ADB_result, unit="ms"):
     reshaped_dict = {
         "Metric": list(SDB_metrics.keys()),
         "SurrealDB": SDB_metrics_list,
-        "MongoDB": ADB_metrics_list,
+        "ArangoDB": ADB_metrics_list,
         "Difference (%)": [0 if sdb == 0 or adb == 0 else round((((adb - sdb) / sdb) * 100), 2) for sdb, adb in zip(SDB_metrics_list, ADB_metrics_list)]
     }
     table = tabulate(reshaped_dict, headers="keys", tablefmt="github")

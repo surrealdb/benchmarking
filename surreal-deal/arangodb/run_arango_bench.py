@@ -2,15 +2,15 @@ from time import perf_counter_ns
 import pathlib
 import json
 
-from surrealdb import SurrealDB
+from arango import ArangoClient
 
-import define_surrealdb_bench as sdb
+import define_arangodb_bench as adb
 
 from bench_utils import format_time, throughput_calc
 
 # Read the data
 
-data_path = pathlib.Path(__file__).parents[0] / "output_files" / "surrealdb_data"
+data_path = pathlib.Path(__file__).parents[0] / "output_files" / "arangodb_data"
 
 with open(data_path / pathlib.Path("person_data.json"), "r") as read_file:
     person_data = json.load(read_file)
@@ -31,14 +31,22 @@ print("data loaded")
 
 # run surrealdb bench
 
-SURREALDB_URI = "ws://localhost:8000/test/test"
+# ArangoDB connection settings
+DB_NAME = "sureal-arango"
+DB_URL = "http://localhost:8529"
+DB_USER = "root"
+DB_PASSWORD = "openSesame"
 
-db = SurrealDB(SURREALDB_URI)
+# Initialize ArangoDB client
+client = ArangoClient(hosts=DB_URL)
+sys_db = client.db('_system', username=DB_USER, password=DB_PASSWORD)
 
-db.signin({
-    "username": "root",
-    "password": "root",
-})
+# # Create the database if it does not exist
+# if not sys_db.has_database(DB_NAME):
+#     sys_db.create_database(DB_NAME)
+
+# Connect to the database
+db = client.db(DB_NAME, username=DB_USER, password=DB_PASSWORD)
 
 runs = 10
 
@@ -91,8 +99,12 @@ bench_run_output_list_combined = {
         }
 
 for run in range(runs):
-    # in case it exists drop the database
-    db.query("REMOVE DATABASE test")
+    # Create the database if it does not exist, otherwise delete
+    if sys_db.has_database(DB_NAME):
+        sys_db.delete_database(DB_NAME)
+        sys_db.create_database(DB_NAME)
+    else:
+        sys_db.create_database(DB_NAME)
 
     print(f"Run #{run+1}")
     wall_time_start = perf_counter_ns()
@@ -100,11 +112,32 @@ for run in range(runs):
     ## insert the data
     insert_start = perf_counter_ns()
 
-    insert_person = sdb.sdb_insert_person(person_data)
-    insert_artist = sdb.sdb_insert_artist(artist_data)
-    insert_product = sdb.sdb_insert_product(product_data)
-    insert_order = sdb.sdb_insert_order(order_data)
-    insert_review = sdb.sdb_insert_review(review_data)
+    # Define collection and edge names
+    collections = ["Persons", "Artists", "Products", "Orders", "Reviews"]
+    edge_collections = ["PersonToOrder", "ProductToOrder", "ArtistToProduct", "PersonToReview", "ProductToReview", "ArtistToReview"]
+
+    # Create collections
+    for collection in collections:
+        if db.has_collection(collection):
+            db.delete_collection(collection)
+            db.create_collection(collection)
+        else:
+            db.create_collection(collection)
+
+    # Create edge collections
+    for edge_collection in edge_collections:
+        if db.has_collection(edge_collection):
+            db.delete_collection(edge_collection)
+            db.create_collection(edge_collection, edge=True)
+        else:
+            db.create_collection(edge_collection, edge=True)
+
+    insert_person = adb.adb_insert_person(person_data, db=db)
+    insert_artist = adb.adb_insert_artist(artist_data, db=db)
+    insert_product = adb.adb_insert_product(product_data, db=db)
+    insert_order = adb.adb_insert_order(order_data, db=db)
+    insert_review = adb.adb_insert_review(review_data, db=db)
+    insert_other = adb.adb_insert_other(order_data, product_data, review_data, db=db)
 
     insert_end = perf_counter_ns()
     insert_duration = insert_end - insert_start
@@ -113,10 +146,10 @@ for run in range(runs):
     ## create indexes
     index_start = perf_counter_ns()
 
-    q4_index = sdb.sdb_q4_index(db=db)
-    q5_index = sdb.sdb_q5_index(db=db)
-    q8_index = sdb.sdb_q8_index(db=db)
-    q10_index = sdb.sdb_q10_index(db=db)
+    q4_index = adb.adb_q4_index(db=db)
+    q5_index = adb.adb_q5_index(db=db)
+    q8_index = adb.adb_q8_index(db=db)
+    q10_index = adb.adb_q10_index(db=db)
 
     index_end = perf_counter_ns()
     index_duration = index_end - index_start
@@ -126,8 +159,8 @@ for run in range(runs):
     read_filter_start = perf_counter_ns()
 
     ### filter & order
-    q4 = sdb.sdb_q4(db=db)
-    q13 = sdb.sdb_q13(db=db)
+    q4 = adb.adb_q4(db=db)
+    q13 = adb.adb_q13(db=db)
 
     read_filter_end = perf_counter_ns()
     read_filter_duration = read_filter_end - read_filter_start
@@ -136,9 +169,9 @@ for run in range(runs):
     read_relationships_start = perf_counter_ns()
 
     ### relationships
-    q1 = sdb.sdb_q1(db=db)
-    q2 = sdb.sdb_q2(db=db)
-    q3 = sdb.sdb_q3(db=db)
+    q1 = adb.adb_q1(db=db)
+    q2 = adb.adb_q2(db=db)
+    q3 = adb.adb_q3(db=db)
 
     read_relationships_end = perf_counter_ns()
     read_relationships_duration = read_relationships_end - read_relationships_start
@@ -146,8 +179,8 @@ for run in range(runs):
 
     read_aggregation_start = perf_counter_ns()
     ### aggregation
-    q5 = sdb.sdb_q5(db=db)
-    q6 = sdb.sdb_q6(db=db)
+    q5 = adb.adb_q5(db=db)
+    q6 = adb.adb_q6(db=db)
 
     read_aggregation_end = perf_counter_ns()
     read_aggregation_duration = read_aggregation_end - read_aggregation_start
@@ -156,8 +189,8 @@ for run in range(runs):
     ## update 
     update_start = perf_counter_ns()
 
-    update_one = sdb.sdb_q9(db=db)
-    update_many = sdb.sdb_q10(db=db)
+    update_one = adb.adb_q9(db=db)
+    update_many = adb.adb_q10(db=db)
 
     update_end = perf_counter_ns()
     update_duration = update_end - update_start
@@ -166,8 +199,8 @@ for run in range(runs):
     ## delete
     delete_start = perf_counter_ns()
 
-    delete_one = sdb.sdb_q7(db=db)
-    delete_many = sdb.sdb_q8(db=db)
+    delete_one = adb.adb_q7(db=db)
+    delete_many = adb.adb_q8(db=db)
 
     delete_end = perf_counter_ns()
     delete_duration = delete_end - delete_start
@@ -176,8 +209,8 @@ for run in range(runs):
     ## transactions
     transactions_start = perf_counter_ns()
 
-    tx1_insert_update = sdb.sdb_q11(db=db)
-    tx2_insert = sdb.sdb_q12(db=db)
+    tx1_insert_update = adb.adb_q11(db=db)
+    tx2_insert = adb.adb_q12(db=db)
 
     transactions_end = perf_counter_ns()
     transactions_duration = transactions_end - transactions_start
@@ -300,5 +333,5 @@ for run in range(runs):
 # Output the results
 export_path = pathlib.Path(__file__).parents[0] / "output_files"
 
-with open(export_path / pathlib.Path("surrealdb_bench_output.json"), "w") as file:
+with open(export_path / pathlib.Path("arangodb_bench_output.json"), "w") as file:
     json.dump(bench_run_output_list_combined, file, ensure_ascii=False)
