@@ -8,14 +8,26 @@ import define_surrealdb_bench as sdb
 
 from bench_utils import format_time, throughput_calc
 
-# create the data
+# Read the data
 
-## surrealdb
-person_data = sdb.sdb_generate_person_data()
-artist_data = sdb.sdb_generate_artist_data()
-product_data = sdb.sdb_generate_product_data(artist_data)
-order_data = sdb.sdb_generate_order_data(person_data, product_data)
-review_data = sdb.sdb_generate_review_data(person_data, product_data, artist_data)
+data_path = pathlib.Path(__file__).parents[0] / "output_files" / "surrealdb_data"
+
+with open(data_path / pathlib.Path("person_data.json"), "r") as read_file:
+    person_data = json.load(read_file)
+
+with open(data_path / pathlib.Path("artist_data.json"), "r") as read_file:
+    artist_data = json.load(read_file)
+
+with open(data_path / pathlib.Path("product_data.json"), "r") as read_file:
+    product_data = json.load(read_file)
+
+with open(data_path / pathlib.Path("order_data.json"), "r") as read_file:
+    order_data = json.load(read_file)
+
+with open(data_path / pathlib.Path("review_data.json"), "r") as read_file:
+    review_data = json.load(read_file)
+
+print("data loaded")
 
 # run surrealdb bench
 
@@ -28,7 +40,7 @@ db.signin({
     "password": "root",
 })
 
-runs = 10
+runs = 1
 
 # currently not needed but might be useful later
 # bench_run_output_list_each = []
