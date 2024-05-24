@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "surreal-deal"
+version = "0.1.0"
+description = "internal benchmark"
+authors = ["Alexander <post@alexanderfridiksson.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+mimesis = "^11.1.0"
+ipykernel = "^6.26.0"
+numpy = "^1.26.3"
+tabulate = "^0.9.0"
+surrealdb-beta = "^0.0.3"
+python-arango = "^7.9.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
