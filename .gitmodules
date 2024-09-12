@@ -1,0 +1,3 @@
+[submodule "go-ycsb"]
+	path = go-ycsb
+	url = https://github.com/surrealdb/go-ycsb
