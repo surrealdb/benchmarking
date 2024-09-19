@@ -43,14 +43,14 @@ jobs:
       - name: Bench Dry
         run: cargo run -- -d dry -s 10000 -t 3
 
+      - name: Bench Redis
+        run: cargo run -- -d redis -s 10000 -t 3
+
       - name: Bench Postgres
-        run: cargo run -- -d postgresql -s 10000 -t 3
+        run: cargo run -- -d postgres -s 10000 -t 3
 
       - name: Bench MongoDB
         run: cargo run -- -d mongodb -s 10000 -t 3
-
-      - name: Bench Redis
-        run: cargo run -- -d redis -s 10000 -t 3
 
       - name: Bench SurrealDB+Memory
         run: cargo run -- -d surrealdb-memory -s 10000 -t 3
