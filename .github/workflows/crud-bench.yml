@@ -16,48 +16,108 @@ defaults:
 jobs:
 
   format:
-    name: Crud-bench
+    name: Check format
     runs-on: ubuntu-latest
     steps:
-
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-
+      
       - name: Checkout sources
         uses: actions/checkout@v4
+
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Check format
         run: cargo fmt --all --check
 
-      - name: Run clippy
+  clippy:
+    name: Check clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Check clippy
         run: cargo clippy --tests -- -D warnings
 
-      - name: Test
+  test:
+    name: Check tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Check tests
         run: cargo test
 
-      - name: Build
-        run: cargo build
+  benchmark:
+    name: Benchmark ${{ matrix.description }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Dry
+          - database: dry
+            description: Dry
+          # Redis
+          - database: redis
+            description: Redis
+          # Postgres
+          - database: postgres
+            description: Postgres
+          # MongoDB
+          - database: mondoDB
+            description: MongoDB
+          # SurrealDB + Memory
+          - database: surrealdb-memory
+            description: SurrealDB with in-memory storage
+          # SurrealDB + RocksDB
+          - database: surrealdb-rocksdb
+            description: SurrealDB with RocksDB storage
+          # SurrealDB + SurrealKV
+          - database: surrealdb-surrealkv
+            description: SurrealDB with SurrealKV storage
+    steps:
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Checkout sources
+        uses: actions/checkout@v4
 
-      - name: Bench Dry
-        run: cargo run -- -d dry -s 10000 -t 3
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: Bench Redis
-        run: cargo run -- -d redis -s 10000 -t 3
+      - name: Run benchmarks (10,000 samples / 3 threads)
+        run: cargo run -r -- -d ${{ matrix.database }} -s 10000 -t 3
 
-      - name: Bench Postgres
-        run: cargo run -- -d postgres -s 10000 -t 3
+      - name: Run benchmarks (30,000 samples / 32 threads)
+        run: cargo run -r -- -d ${{ matrix.database }} -s 30000 -t 32
 
-      - name: Bench MongoDB
-        run: cargo run -- -d mongodb -s 10000 -t 3
-
-      - name: Bench SurrealDB+Memory
-        run: cargo run -- -d surrealdb-memory -s 10000 -t 3
-
-      - name: Bench SurrealDB+RocksDB
-        run: cargo run -- -d surrealdb-rocksdb -s 10000 -t 3
-
-      - name: Bench SurrealDB+SurrealKV
-        run: cargo run -- -d surrealdb-surrealkv -s 10000 -t 3
-
+      - name: Run benchmarks (100,000 samples / 32 threads)
+        run: cargo run -r -- -d ${{ matrix.database }} -s 100000 -t 32
