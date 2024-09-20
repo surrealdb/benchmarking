@@ -165,6 +165,8 @@ jobs:
           path: ${{ github.workspace }}/artifacts
           merge-multiple: true
 
+      - name: Set file permissions
+        run: chmod +x ${{ github.workspace }}/artifacts/crud-bench
 
       - name: Run benchmarks (10,000 samples / 3 threads)
         run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 10000 -t 3
