@@ -137,6 +137,9 @@ jobs:
           # MongoDB
           - database: mongodb
             description: MongoDB
+          # ReDB
+          - database: redb
+            description: ReDB
           # RocksDB
           - database: rocksdb
             description: RocksDB
@@ -176,3 +179,6 @@ jobs:
 
       - name: Run benchmarks (100,000 samples / 32 threads)
         run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 100000 -t 32
+      
+      - name: Run benchmarks (250,000 samples / 128 threads)
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 250000 -t 128
