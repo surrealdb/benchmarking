@@ -39,6 +39,8 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
         with:
+          cache-on-failure: "true"
+          workspaces: "crud-bench"
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Check format
@@ -59,6 +61,8 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
         with:
+          cache-on-failure: "true"
+          workspaces: "crud-bench"
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Check clippy
@@ -77,14 +81,46 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
         with:
+          cache-on-failure: "true"
+          workspaces: "crud-bench"
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Check tests
         run: cargo test
 
+  build:
+    name: Build crud-bench
+    runs-on: [runner-amd64-2xlarge-private]
+    steps:
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          workspaces: crud-bench
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build benchmark
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      - name: Store artifacts
+        run: cp target/x86_64-unknown-linux-gnu/release/crud-bench crud-bench
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: crud-bench
+          path: crud-bench/crud-bench
+
   benchmark:
     name: Benchmark ${{ matrix.description }}
-    runs-on: ubuntu-latest
+    needs: build
+    runs-on: [runner-amd64-2xlarge-private]
     strategy:
       fail-fast: false
       matrix:
@@ -123,19 +159,18 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
 
-      - name: Setup cache
-        uses: Swatinem/rust-cache@v2
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
+          path: ${{ github.workspace }}/artifacts
+          merge-multiple: true
 
-      - name: Build benchmark
-        run: cargo build -r
 
       - name: Run benchmarks (10,000 samples / 3 threads)
-        run: cargo run -r -- -d ${{ matrix.database }} -s 10000 -t 3
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 10000 -t 3
 
       - name: Run benchmarks (30,000 samples / 32 threads)
-        run: cargo run -r -- -d ${{ matrix.database }} -s 30000 -t 32
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 30000 -t 32
 
       - name: Run benchmarks (100,000 samples / 32 threads)
-        run: cargo run -r -- -d ${{ matrix.database }} -s 100000 -t 32
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 100000 -t 32
