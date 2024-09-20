@@ -1,4 +1,4 @@
-name: Crud-bench
+name: CRUD-bench
 
 on:
   workflow_dispatch:
@@ -6,7 +6,16 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
   merge_group:
+
+concurrency:
+  # Use github.run_id on main branch
+  # Use github.event.pull_request.number on pull requests, so it's unique per pull request
+  # Use github.ref on other branches, so it's unique per branch
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -82,7 +91,7 @@ jobs:
         include:
           # Dry
           - database: dry
-            description: Dry
+            description: Map
           # Redis
           - database: redis
             description: Redis
@@ -90,8 +99,14 @@ jobs:
           - database: postgres
             description: Postgres
           # MongoDB
-          - database: mondoDB
+          - database: mongodb
             description: MongoDB
+          # RocksDB
+          - database: rocksdb
+            description: RocksDB
+          # SurrealKV
+          - database: surrealkv
+            description: SurrealKV
           # SurrealDB + Memory
           - database: surrealdb-memory
             description: SurrealDB with in-memory storage
@@ -112,6 +127,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build benchmark
+        run: cargo build -r
 
       - name: Run benchmarks (10,000 samples / 3 threads)
         run: cargo run -r -- -d ${{ matrix.database }} -s 10000 -t 3
