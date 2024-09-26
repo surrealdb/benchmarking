@@ -122,7 +122,6 @@ impl Benchmark {
 		let percent = Arc::new(AtomicU8::new(0));
 		print!("\r{operation:?} 0%");
 		pool.scope(|s| {
-
 			// The Tokio runtime is shared across clients
 			let runtime = Arc::new(
 				Builder::new_multi_thread()
