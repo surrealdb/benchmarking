@@ -174,8 +174,8 @@ async fn main() -> Result<()> {
 		// print the results
 		Ok(res) => {
 			println!(
-				"Benchmark result for {:?} on docker {image:?} - Samples: {} - Threads: {} - Workers: {}",
-				args.database, args.samples, args.threads, args.workers
+				"Benchmark result for {:?} on docker {image:?} - Samples: {} - Threads: {} - Workers: {} - Cpus: {}",
+				args.database, args.samples, args.threads, args.workers, num_cpus::get()
 			);
 			println!("{res}");
 			Ok(())
