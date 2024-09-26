@@ -172,13 +172,13 @@ jobs:
         run: chmod +x ${{ github.workspace }}/artifacts/crud-bench
 
       - name: Run benchmarks (10,000 samples / 3 threads)
-        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 10000 -t 3
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 10000 -t 3 -w 4
 
       - name: Run benchmarks (30,000 samples / 32 threads)
-        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 30000 -t 32
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 30000 -t 32 -w 4
 
       - name: Run benchmarks (100,000 samples / 32 threads)
-        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 100000 -t 32
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 100000 -t 32 -w 4
       
       - name: Run benchmarks (250,000 samples / 128 threads)
-        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 250000 -t 128
+        run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 250000 -t 128 -w 4

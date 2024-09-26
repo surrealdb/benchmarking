@@ -9,7 +9,7 @@ use anyhow::{bail, Result};
 use log::{error, info, warn};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
-use rayon::scope;
+use rayon::ThreadPoolBuilder;
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Builder;
 use tokio::time::sleep;
@@ -18,6 +18,7 @@ use crate::Args;
 
 pub(crate) struct Benchmark {
 	threads: usize,
+	workers: usize,
 	samples: i32,
 	timeout: Duration,
 	endpoint: Option<String>,
@@ -43,6 +44,7 @@ impl Benchmark {
 	pub(crate) fn new(args: &Args) -> Self {
 		Self {
 			threads: args.threads,
+			workers: args.workers,
 			samples: args.samples,
 			timeout: Duration::from_secs(60),
 			endpoint: args.endpoint.to_owned(),
@@ -108,24 +110,37 @@ impl Benchmark {
 		C: BenchmarkClient + Send,
 		P: BenchmarkEngine<C> + Send + Sync,
 	{
+		// We create a dedicated thread pool sized to the number of threads,
+		// but not larger than the number of available logical CPUs
+		let pool = ThreadPoolBuilder::new()
+			.num_threads(self.threads.min(num_cpus::get()))
+			.build()
+			.expect("Failed to build the thread pool");
+
 		let error = Arc::new(AtomicBool::new(false));
 		let time = Instant::now();
 		let percent = Arc::new(AtomicU8::new(0));
 		print!("\r{operation:?} 0%");
-		scope(|s| {
+		pool.scope(|s| {
+
+			// The Tokio runtime is shared across clients
+			let runtime = Arc::new(
+				Builder::new_multi_thread()
+					.thread_stack_size(10 * 1024 * 1024) // Set stack size to 10MiB
+					.worker_threads(self.workers) // Set the number of worker threads
+					.enable_all() // Enables all runtime features, including I/O and time
+					.build()
+					.expect("Failed to create a runtime"),
+			);
 			let current = Arc::new(AtomicI32::new(0));
 			for thread_number in 0..self.threads {
 				let current = current.clone();
 				let error = error.clone();
 				let percent = percent.clone();
+				let runtime = runtime.clone();
 				s.spawn(move |_| {
 					let mut record_provider = RecordProvider::default();
-					let runtime = Builder::new_multi_thread()
-						.thread_stack_size(10 * 1024 * 1024) // Set stack size to 10MiB
-						.worker_threads(4) // Set the number of worker threads
-						.enable_all() // Enables all runtime features, including I/O and time
-						.build()
-						.expect("Failed to create a runtime");
+
 					if let Err(e) = runtime.block_on(async {
 						info!("Thread #{thread_number}/{operation:?} starts");
 						let mut client = engine.create_client(self.endpoint.to_owned()).await?;

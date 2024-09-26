@@ -28,6 +28,7 @@ anyhow = "1.0.88"
 clap = { version = "4.5.17", features = ["derive"] }
 env_logger = "0.11.5"
 log = "0.4.22"
+num_cpus = "1.16.0"
 mongodb = { version = "2.8.2", optional = true }
 rand = { version = "0.8.5", features = ["small_rng"] }
 rayon = "1.10.0"

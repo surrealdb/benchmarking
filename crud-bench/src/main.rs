@@ -57,6 +57,10 @@ pub(crate) struct Args {
 	/// Number of concurrent threads
 	#[clap(short, long)]
 	pub(crate) threads: usize,
+
+	/// Number of workers for the client async runtime (tokio)
+	#[clap(short, long)]
+	pub(crate) workers: usize,
 }
 
 #[derive(ValueEnum, Debug, Clone)]
@@ -170,8 +174,8 @@ async fn main() -> Result<()> {
 		// print the results
 		Ok(res) => {
 			println!(
-				"Benchmark result for {:?} on docker {image:?} - Samples: {} - Threads: {}",
-				args.database, args.samples, args.threads
+				"Benchmark result for {:?} on docker {image:?} - Samples: {} - Threads: {} - Workers: {}",
+				args.database, args.samples, args.threads, args.workers
 			);
 			println!("{res}");
 			Ok(())
