@@ -1,7 +1,3 @@
-use anyhow::Result;
-use clap::{Parser, ValueEnum};
-use log::info;
-
 use crate::benchmark::{Benchmark, BenchmarkResult};
 use crate::docker::DockerContainer;
 use crate::docker::DockerParams;
@@ -22,6 +18,10 @@ use crate::speedb::SpeeDBClientProvider;
 use crate::surrealdb::SurrealDBClientProvider;
 #[cfg(feature = "surrealkv")]
 use crate::surrealkv::SurrealKVClientProvider;
+use anyhow::Result;
+use clap::{Parser, ValueEnum};
+use log::info;
+use tokio::runtime::Builder;
 
 mod benchmark;
 mod docker;
@@ -151,8 +151,7 @@ impl Database {
 	}
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
 	// Initialise the logger
 	env_logger::init();
 	info!("Benchmark started!");
@@ -167,8 +166,15 @@ async fn main() -> Result<()> {
 	let container = args.database.start_docker(args.image);
 	let image = container.as_ref().map(|c| c.image().to_string());
 
+	let runtime = Builder::new_multi_thread()
+		.thread_stack_size(10 * 1024 * 1024) // Set stack size to 10MiB
+		.worker_threads(args.workers) // Set the number of worker threads
+		.enable_all() // Enables all runtime features, including I/O and time
+		.build()
+		.expect("Failed to create a runtime");
+
 	// Run the benchmark
-	let res = args.database.run(&benchmark).await;
+	let res = runtime.block_on(async { args.database.run(&benchmark).await });
 
 	match res {
 		// print the results
