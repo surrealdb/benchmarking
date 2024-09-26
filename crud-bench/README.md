@@ -39,6 +39,7 @@ Options:
   -d, --database <DATABASE>  Database [possible values: dry, surrealdb, surrealdb-memory, surrealdb-rocksdb, surrealdb-surrealkv, mongodb, postgresql]
   -s, --samples <SAMPLES>    Number of samples
   -t, --threads <THREADS>    Number of concurrent threads
+  -w, --workers <WORKERS>    Number of workers for the client async runtime (tokio)
   -h, --help                 Print help
 ```
 
@@ -47,7 +48,7 @@ Options:
 Run the benchmark without interaction with any database:
 
 ```bash
-cargo run -r -- -d dry -s 100000 -t 3
+cargo run -r -- -d dry -s 100000 -t 3 -w 6
 ```
 
 ## PostgreSQL benchmark
@@ -55,7 +56,7 @@ cargo run -r -- -d dry -s 100000 -t 3
 Run the benchmark against PostgreSQL:
 
 ```bash
-cargo run -r -- -d postgresql -s 100000 -t 3
+cargo run -r -- -d postgresql -s 100000 -t 3 -w 6
 ```
 
 ## MongoDB benchmark
@@ -63,7 +64,7 @@ cargo run -r -- -d postgresql -s 100000 -t 3
 Run the benchmark against MongoDB:
 
 ```bash
-cargo run -r -- -d mongodb -s 100000 -t 3
+cargo run -r -- -d mongodb -s 100000 -t 3 -w 6
 ```
 
 ## Redis benchmark
@@ -71,7 +72,7 @@ cargo run -r -- -d mongodb -s 100000 -t 3
 Run the benchmark against Redis:
 
 ```bash
-cargo run -r -- -d redis -s 100000 -t 3
+cargo run -r -- -d redis -s 100000 -t 3 -w 6
 ```
 
 ## RocksDB benchmark
@@ -79,7 +80,7 @@ cargo run -r -- -d redis -s 100000 -t 3
 Run the benchmark against RocksDB:
 
 ```bash
-cargo run -r -- -d rocksdb -s 100000 -t 3
+cargo run -r -- -d rocksdb -s 100000 -t 3 -w 6
 ```
 
 ## SurrealKV benchmark
@@ -87,7 +88,7 @@ cargo run -r -- -d rocksdb -s 100000 -t 3
 Run the benchmark against SurrealKV:
 
 ```bash
-cargo run -r -- -d surrealkv -s 100000 -t 3
+cargo run -r -- -d surrealkv -s 100000 -t 3 -w 6
 ```
 
 ## SurrealDB+Memory benchmark
@@ -95,7 +96,7 @@ cargo run -r -- -d surrealkv -s 100000 -t 3
 Run the benchmark against SurrealDB in memory:
 
 ```bash
-cargo run -r -- -d surrealdb-memory -s 100000 -t 3
+cargo run -r -- -d surrealdb-memory -s 100000 -t 3 -w 6
 ```
 
 ## SurrealDB+RocksDB benchmark
@@ -103,7 +104,7 @@ cargo run -r -- -d surrealdb-memory -s 100000 -t 3
 Run the benchmark against SurreadDB with RocksDB:
 
 ```bash
-cargo run -r -- -d surrealdb-rocksdb -s 100000 -t 3
+cargo run -r -- -d surrealdb-rocksdb -s 100000 -t 3 -w 6
 ```
 
 ## SurrealDB+SurrealKV benchmark
@@ -111,7 +112,7 @@ cargo run -r -- -d surrealdb-rocksdb -s 100000 -t 3
 Run the benchmark against SurreadDB with SurrealKV:
 
 ```bash
-cargo run -r -- -d surrealdb-surrealkv -s 100000 -t 3
+cargo run -r -- -d surrealdb-surrealkv -s 100000 -t 3 -w 6
 ```
 
 ## SurrealDB local benchmark
@@ -127,5 +128,5 @@ cargo run --features=storage-surrealkv -r -- start --user root --pass root surre
 Then run the bench:
 
 ```bash
-cargo run -r -- -d surrealdb -s 100000 -t 3
+cargo run -r -- -d surrealdb -s 100000 -t 3 -w 6
 ```
