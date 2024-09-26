@@ -32,7 +32,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      
+
       - name: Checkout sources
         uses: actions/checkout@v4
 
@@ -54,7 +54,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      
+
       - name: Checkout sources
         uses: actions/checkout@v4
 
@@ -74,7 +74,7 @@ jobs:
     steps:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Checkout sources
         uses: actions/checkout@v4
 
@@ -90,11 +90,11 @@ jobs:
 
   build:
     name: Build crud-bench
-    runs-on: [runner-amd64-2xlarge-private]
+    runs-on: [ runner-amd64-2xlarge-private ]
     steps:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Checkout sources
         uses: actions/checkout@v4
 
@@ -120,7 +120,7 @@ jobs:
   benchmark:
     name: Benchmark ${{ matrix.description }}
     needs: build
-    runs-on: [runner-amd64-2xlarge-private]
+    runs-on: [ runner-amd64-2xlarge-private ]
     strategy:
       fail-fast: false
       matrix:
@@ -158,7 +158,7 @@ jobs:
     steps:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Checkout sources
         uses: actions/checkout@v4
 
@@ -179,6 +179,6 @@ jobs:
 
       - name: Run benchmarks (100,000 samples / 32 threads)
         run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 100000 -t 32
-      
+
       - name: Run benchmarks (250,000 samples / 128 threads)
         run: ${{ github.workspace }}/artifacts/crud-bench -d ${{ matrix.database }} -s 250000 -t 128
