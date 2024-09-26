@@ -60,7 +60,7 @@ pub(crate) struct Args {
 
 	/// Number of workers for the client async runtime (tokio)
 	#[clap(short, long)]
-	pub(crate) workers: usize,
+	pub(crate) workers: Option<usize>,
 }
 
 #[derive(ValueEnum, Debug, Clone)]
@@ -151,7 +151,7 @@ impl Database {
 	}
 }
 
-fn main() -> Result<()> {
+fn main() {
 	// Initialise the logger
 	env_logger::init();
 	info!("Benchmark started!");
@@ -166,9 +166,10 @@ fn main() -> Result<()> {
 	let container = args.database.start_docker(args.image);
 	let image = container.as_ref().map(|c| c.image().to_string());
 
+	let workers = args.workers.unwrap_or_else(num_cpus::get);
 	let runtime = Builder::new_multi_thread()
 		.thread_stack_size(10 * 1024 * 1024) // Set stack size to 10MiB
-		.worker_threads(args.workers) // Set the number of worker threads
+		.worker_threads(workers) // Set the number of worker threads
 		.enable_all() // Enables all runtime features, including I/O and time
 		.build()
 		.expect("Failed to create a runtime");
@@ -181,17 +182,16 @@ fn main() -> Result<()> {
 		Ok(res) => {
 			println!(
 				"Benchmark result for {:?} on docker {image:?} - Samples: {} - Threads: {} - Workers: {} - Cpus: {}",
-				args.database, args.samples, args.threads, args.workers, num_cpus::get()
+				args.database, args.samples, args.threads, workers, num_cpus::get()
 			);
 			println!("{res}");
-			Ok(())
 		}
 		// print the docker logs if any error occurred
 		Err(e) => {
 			if let Some(container) = &container {
 				container.logs();
 			}
-			Err(e)
+			eprintln!("Failure: {e}");
 		}
 	}
 }
