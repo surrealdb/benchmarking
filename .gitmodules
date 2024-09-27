@@ -1,3 +1,6 @@
 [submodule "go-ycsb"]
 	path = go-ycsb
 	url = https://github.com/surrealdb/go-ycsb
+[submodule "crud-bench"]
+	path = crud-bench
+	url = https://github.com/surrealdb/crud-bench
