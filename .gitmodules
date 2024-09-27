@@ -1,10 +1,10 @@
+[submodule "crud-bench"]
+	path = crud-bench
+	url = https://github.com/surrealdb/crud-bench
 [submodule "go-ycsb"]
 	path = go-ycsb
 	url = https://github.com/surrealdb/go-ycsb
 	branch = surrealdb
-[submodule "crud-bench"]
-	path = crud-bench
-	url = https://github.com/surrealdb/crud-bench
 [submodule "nosqlbench"]
 	path = nosqlbench
 	url = https://github.com/surrealdb/nosqlbench
