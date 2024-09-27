@@ -4,3 +4,6 @@
 [submodule "crud-bench"]
 	path = crud-bench
 	url = https://github.com/surrealdb/crud-bench
+[submodule "nosqlbench"]
+	path = nosqlbench
+	url = https://github.com/surrealdb/nosqlbench
