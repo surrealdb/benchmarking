@@ -1,5 +1,31 @@
+# -----------------------------------
+# OS X
+# -----------------------------------
+
+# Directory files
 .DS_Store
-.venv
-.vscode
-.idea
-__pycache__
+.AppleDouble
+.LSOverride
+
+# Thumbnail files
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# -----------------------------------
+# Folders
+# -----------------------------------
+
+__pycache__/
+.idea/
+.venv/
+.vscode/
