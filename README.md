@@ -4,7 +4,7 @@
     <img width=120 src="https://raw.githubusercontent.com/surrealdb/icons/main/surreal.svg" />
 </p>
 
-<h3 align="center">A collection of benchmarking tools and libraries for testing, comparing, and improving the performance of SurrealDB.</h3>
+<h3 align="center">A collection of benchmarking tools and libraries for testing, <br> comparing, and improving the performance of SurrealDB.</h3>
 
 <br>
 
@@ -47,7 +47,7 @@ As we add support for additional benchmarking suites, we will add and link to th
 ## [crud-bench](https://github.com/surrealdb/crud-bench)
 
 > [!TIP]
-> The `crud-bench` tool is being actively developed. Please ensure that you are running the latest code version.
+> The `crud-bench` tool is being actively developed. Please ensure that you are running the latest code.
 
 A benchmark for developers working on features in SurrealDB to check how it impacts CRUD performance.
 
