@@ -83,7 +83,7 @@ crud-bench -d surrealdb-rocksdb -s 5000000 -c 128 -t 48 -k string26 -r
 ```
 6. Run a remote benchmark against a remote SurrealDB server
 ```sh
-crud-bench -d surrealdb-rocksdb -s 5000000 -c 128 -t 48 -k string26 -r
+crud-bench -d surrealdb --endpoint ws://127.0.0.1:8000 -s 5000000 -c 128 -t 48 -k string26 -r
 ```
 </details>
 
