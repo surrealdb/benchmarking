@@ -53,7 +53,36 @@ A benchmark for developers working on features in SurrealDB to check how it impa
 
 ## [ann-benchmarks](https://github.com/surrealdb/ann-benchmarks/tree/surrealdb)
 
-Nearest neighbour benchmarks is a testing tool for comparing the performance of vector data, approximate and exact nearest neighbour algorithms across different data platforms, databases, and libraries. This project contains tools to benchmark various implementations of approximate nearest neighbor, and exact nearest neighbour search for selected metrics - with pre-generated datasets, and a test suite to verify function integrity.
+The Approximate Nearest Neighbour benchmarks suite is a testing tool for comparing the performance of vector datasets, with a focus on approximate and exact nearest neighbour algorithms across different data platforms, databases, and libraries. This project contains tools to benchmark various implementations of approximate nearest neighbor, and exact nearest neighbour search for selected metrics - with pre-generated datasets, and a test suite to verify function integrity.
+
+<details>
+
+<summary>Getting started with the ann-benchmarks benchmarking tool</summary>
+
+<br>
+
+1. Navigate to the `surrealdb` [branch](https://github.com/surrealdb/ann-benchmarks/tree/surrealdb) on the repository.
+```
+git clone -b surrealdb https://github.com/surrealdb/ann-benchmarks
+```
+2. Setup a Python virtual environment
+```
+python3.10 -m venv path/to/venv
+source path/to/venv/bin/activate
+```
+3. Install the benchmark requirements
+```
+pip3.10 install -r requirements.txt
+```
+4. Install the desired benchmark algorithm
+```
+python3.10 install.py --algorithm surreal_hnsw
+```
+5. Run a specific benchmark with a specified dataset
+```
+python3.10 run.py --run-disabled --algorithm surreal_hnsw --dataset random-xs-20-euclidean
+```
+</details>
 
 ## [go-ycsb](https://github.com/surrealdb/go-ycsb/tree/surrealdb)
 
