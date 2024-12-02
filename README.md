@@ -46,6 +46,9 @@ As we add support for additional benchmarking suites, we will add and link to th
 
 ## [crud-bench](https://github.com/surrealdb/crud-bench)
 
+> [!TIP]
+> The `crud-bench` tool is being actively developed. Please ensure that you are running the latest code version.
+
 A benchmark for developers working on features in SurrealDB to check how it impacts CRUD performance.
 
 ## [ann-benchmarks](https://github.com/surrealdb/ann-benchmarks/tree/surrealdb)
@@ -84,7 +87,7 @@ make quick
 
 ## [nosqlbench](https://github.com/surrealdb/nosqlbench/tree/surrealdb)
 
-> [!NOTE]
+> [!IMPORTANT]
 > This SurrealDB changes to this benchmarking tool have not yet been released. Please check back later.
 
 NoSQLBench is a serious performance testing tool for the NoSQL ecosystem, sponsored by DataStax. It brings together features and capabilities that are not found in any other tool. The core machinery of NoSQLBench has been built with attention to detail. It has been battle tested within DataStax and in the NoSQL ecosystem as a way to help users validate their data models, baseline system performance, and qualify system designs for scale.
