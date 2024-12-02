@@ -118,7 +118,7 @@ python3.10 run.py --run-disabled --algorithm surreal_hnsw --dataset random-xs-20
 
 ## [go-ycsb](https://github.com/surrealdb/go-ycsb/tree/surrealdb)
 
-The Yahoo! Cloud Serving Benchmark (YCSB) is an open-source specification and program suite for evaluating retrieval and maintenance capabilities of computer programs. It is often used to compare the relative performance of NoSQL database management systems. This Golang port of the original benchmarking suite allows benchmarking comparison using the Golang programing language.
+The Yahoo! Cloud Serving Benchmark (YCSB) is an open-source specification and program suite for evaluating retrieval and maintenance capabilities of computer programs. It is often used to compare the relative performance of NoSQL database management systems. This Golang port of the original benchmarking suite allows benchmarking comparison using the Golang programing language, and is sponsored by Pingcap.
 
 <details>
 
