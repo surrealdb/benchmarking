@@ -63,6 +63,9 @@ The Yahoo! Cloud Serving Benchmark (YCSB) is an open-source specification and pr
 <br>
 
 1. Navigate to the `surrealdb` [branch](https://github.com/surrealdb/go-ycsb/tree/surrealdb) on the repository.
+```
+git clone -b surrealdb https://github.com/surrealdb/go-ycsb
+```
 2. Build the go-ycsb binary
 ```
 make quick
