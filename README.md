@@ -56,8 +56,11 @@ Nearest neighbour benchmarks is a testing tool for comparing the performance of 
 
 The Yahoo! Cloud Serving Benchmark (YCSB) is an open-source specification and program suite for evaluating retrieval and maintenance capabilities of computer programs. It is often used to compare the relative performance of NoSQL database management systems. This Golang port of the original benchmarking suite allows benchmarking comparison using the Golang programing language.
 
-<details open>
-<summary>Getting started with go-ycsb</summary>
+<details>
+
+<summary>Getting started with the go-ycsb benchmarking tool</summary>
+
+<br>
 
 1. Navigate to the `surrealdb` [branch](https://github.com/surrealdb/go-ycsb/tree/surrealdb) on the repository.
 2. Build the go-ycsb binary
