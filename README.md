@@ -46,14 +46,14 @@ As we add support for additional benchmarking suites, we will add and link to th
 
 ## [crud-bench](https://github.com/surrealdb/crud-bench)
 
-> [!NOTE]
-> The `crud-bench` tool is being actively developed. Please ensure that you are running the latest code.
-
 The crud-bench benchmarking tool is an open-source benchmarking tool for testing and comparing the performance of a number of different workloads on embedded, networked, and remote databases. It can be used to compare both SQL and NoSQL platforms including key-value, and embedded databases. Importantly crud-bench focuses on testing additional features which are not present in other benchmarking tools, but which are available in SurrealDB.
 
 The primary purpose of crud-bench is to continually test and monitor the performance of features and functionality built in to SurrealDB, enabling developers working on features in SurrealDB to assess the impact of their changes on database queries and performance.
 
 The crud-bench benchmarking tool is being actively developed with new features and functionality being added regularly.
+
+> [!TIP]
+> The `crud-bench` tool is being actively developed. Please ensure that you are running the latest code.
 
 <details>
 
@@ -152,7 +152,7 @@ make quick
 
 ## [nosqlbench](https://github.com/surrealdb/nosqlbench/tree/surrealdb)
 
+NoSQLBench is a serious performance testing tool for the NoSQL ecosystem, sponsored by DataStax. It brings together features and capabilities that are not found in any other tool. The core machinery of NoSQLBench has been built with attention to detail. It has been battle tested within DataStax and in the NoSQL ecosystem as a way to help users validate their data models, baseline system performance, and qualify system designs for scale.
+
 > [!IMPORTANT]
 > This SurrealDB changes to this benchmarking tool have not yet been released. Please check back later.
-
-NoSQLBench is a serious performance testing tool for the NoSQL ecosystem, sponsored by DataStax. It brings together features and capabilities that are not found in any other tool. The core machinery of NoSQLBench has been built with attention to detail. It has been battle tested within DataStax and in the NoSQL ecosystem as a way to help users validate their data models, baseline system performance, and qualify system designs for scale.
