@@ -84,20 +84,7 @@ make quick
 
 ## [nosqlbench](https://github.com/surrealdb/nosqlbench/tree/surrealdb)
 
+> [!NOTE]
+> This SurrealDB changes to this benchmarking tool have not yet been released. Please check back later.
+
 NoSQLBench is a serious performance testing tool for the NoSQL ecosystem, sponsored by DataStax. It brings together features and capabilities that are not found in any other tool. The core machinery of NoSQLBench has been built with attention to detail. It has been battle tested within DataStax and in the NoSQL ecosystem as a way to help users validate their data models, baseline system performance, and qualify system designs for scale.
-
-## go-ycsb
-
-Cloned from https://github.com/pingcap/go-ycsb and added `db/surrealdb`
-
-To run it against a local surrealdb instance (`ws://localhost:8000/rpc`):
-```
-$ cd go-ycsb
-$ make build
-$ ./bin/go-ycsb run surrealdb -P workloads/basic
-```
-
-Available config properties (see go-ycsb/db/surrealdb/db.go:29):
-```
-$ ./bin/go-ycsb run surrealdb -P workloads/basic -p surrealdb.uri='ws://localhost:8000/rpc' -p surrealdb.user=root -p surrealdb.pass=root -p surrealdb.ns=ycsb -p surrealdb.db=ycsb
-```
