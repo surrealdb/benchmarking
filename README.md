@@ -49,7 +49,11 @@ As we add support for additional benchmarking suites, we will add and link to th
 > [!TIP]
 > The `crud-bench` tool is being actively developed. Please ensure that you are running the latest code.
 
-A benchmark for developers working on features in SurrealDB to check how it impacts CRUD performance.
+The crud-bench benchmarking tool is an open-source benchmarking tool for testing and comparing the performance of a number of different workloads on embedded, networked, and remote databases. It can be used to compare both SQL and NoSQL platforms including key-value, and embedded databases. Importantly crud-bench focuses on testing additional features which are not present in other benchmarking tools, but which are available in SurrealDB.
+
+The primary purpose of crud-bench is to continually test and monitor the performance of features and functionality built in to SurrealDB, enabling developers working on features in SurrealDB to assess the impact of their changes on database queries and performance.
+
+The crud-bench benchmarking tool is being actively developed with new features and functionality being added regularly.
 
 ## [ann-benchmarks](https://github.com/surrealdb/ann-benchmarks/tree/surrealdb)
 
