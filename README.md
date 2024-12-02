@@ -149,8 +149,6 @@ make quick
 ## [nosqlbench](https://github.com/surrealdb/nosqlbench/tree/surrealdb)
 
 > [!IMPORTANT]
-> This SurrealDB changes to this benchmarking tool have not yet been released. Please check back later.
+> The SurrealDB changes to this benchmarking tool have not yet been released. Please check back later.
 
 NoSQLBench is a serious performance testing tool for the NoSQL ecosystem, sponsored by DataStax. It brings together features and capabilities that are not found in any other tool. The core machinery of NoSQLBench has been built with attention to detail. It has been battle tested within DataStax and in the NoSQL ecosystem as a way to help users validate their data models, baseline system performance, and qualify system designs for scale.
-
-## Best practices
