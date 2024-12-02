@@ -103,8 +103,7 @@ git clone -b surrealdb https://github.com/surrealdb/ann-benchmarks
 ```
 2. Setup a Python virtual environment
 ```sh
-python3.10 -m venv path/to/venv
-source path/to/venv/bin/activate
+python3.10 -m venv path/to/venv && source path/to/venv/bin/activate
 ```
 3. Install the benchmark requirements
 ```sh
