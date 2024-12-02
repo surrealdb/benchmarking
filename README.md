@@ -55,6 +55,38 @@ The primary purpose of crud-bench is to continually test and monitor the perform
 
 The crud-bench benchmarking tool is being actively developed with new features and functionality being added regularly.
 
+<details>
+
+<summary>Getting started with the crud-bench benchmarking tool</summary>
+
+<br>
+
+1. Navigate to the crud-bench [repository](https://github.com/surrealdb/crud-bench).
+```sh
+git clone -b main https://github.com/surrealdb/crud-bench
+```
+2. Build the `crud-bench` tool in release mode
+```sh
+cargo build --release && ln -s target/release/crud-bench crud-bench
+```
+3. View the configuration options
+```sh
+crud-bench --help
+```
+4. Ensure the Docker daemon is running
+```sh
+dockerd
+```
+5. Run a local benchmark with custom options
+```sh
+crud-bench -d surrealdb-rocksdb -s 5000000 -c 128 -t 48 -k string26 -r
+```
+6. Run a remote benchmark against a remote SurrealDB server
+```sh
+crud-bench -d surrealdb-rocksdb -s 5000000 -c 128 -t 48 -k string26 -r
+```
+</details>
+
 ## [ann-benchmarks](https://github.com/surrealdb/ann-benchmarks/tree/surrealdb)
 
 The Approximate Nearest Neighbour benchmarks suite is a testing tool for comparing the performance of vector datasets, with a focus on approximate and exact nearest neighbour algorithms across different data platforms, databases, and libraries. This project contains tools to benchmark various implementations of approximate nearest neighbor, and exact nearest neighbour search for selected metrics - with pre-generated datasets, and a test suite to verify function integrity.
@@ -66,24 +98,24 @@ The Approximate Nearest Neighbour benchmarks suite is a testing tool for compari
 <br>
 
 1. Navigate to the `surrealdb` [branch](https://github.com/surrealdb/ann-benchmarks/tree/surrealdb) on the repository.
-```
+```sh
 git clone -b surrealdb https://github.com/surrealdb/ann-benchmarks
 ```
 2. Setup a Python virtual environment
-```
+```sh
 python3.10 -m venv path/to/venv
 source path/to/venv/bin/activate
 ```
 3. Install the benchmark requirements
-```
+```sh
 pip3.10 install -r requirements.txt
 ```
 4. Install the desired benchmark algorithm
-```
+```sh
 python3.10 install.py --algorithm surreal_hnsw
 ```
 5. Run a specific benchmark with a specified dataset
-```
+```sh
 python3.10 run.py --run-disabled --algorithm surreal_hnsw --dataset random-xs-20-euclidean
 ```
 </details>
@@ -99,20 +131,20 @@ The Yahoo! Cloud Serving Benchmark (YCSB) is an open-source specification and pr
 <br>
 
 1. Navigate to the `surrealdb` [branch](https://github.com/surrealdb/go-ycsb/tree/surrealdb) on the repository.
-```
+```sh
 git clone -b surrealdb https://github.com/surrealdb/go-ycsb
 ```
 2. Build the go-ycsb binary
-```
+```sh
 make quick
 ```
 3. Test a workload locally against SurrealDB
-```
+```sh
 ./bin/go-ycsb load surrealdb -P workloads/workloada
 ./bin/go-ycsb run surrealdb -P workloads/workloada
 ```
-4. Test a workload locally against a remote SurrealDB server
-```
+4. Test a workload against a remote SurrealDB server
+```sh
 ./bin/go-ycsb load surrealdb -P workloads/workloada -p surrealdb.uri='ws://127.0.0.1:8000' -p surrealdb.user=root -p surrealdb.pass=root
 ./bin/go-ycsb run surrealdb -P workloads/workloada -p surrealdb.uri='ws://127.0.0.1:8000' -p surrealdb.user=root -p surrealdb.pass=root
 ```
