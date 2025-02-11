@@ -21,7 +21,7 @@ One of the fundamental architecture designs of SurrealDB is that the storage lay
 
 When starting the SurrealDB server, it is important to run the server using the correct configuration options and settings. For production environments or for performance benchmarking, the `--log` command-line argument or the `SURREAL_LOG` environment variable should be set to `error`, `warn`, or `info` (the default option when not specified). Other log verbosity levels (such as `debug`, `trace`, or `full`) are only for use in debugging, testing, or development scenarios.
 
-When starting up the SurrealDB binary ensure that the `--log` argument is omitted, or specifically set to the correct log verbosity level.
+When starting up the SurrealDB binary ensure that the `--log` argument is omitted, or specifically set to the correct log verbosity level. Additionally, ensure that the `rocksdb` storage engine is used to store data.
 
 ```sh
 surreal start --log info rocksdb:/data
