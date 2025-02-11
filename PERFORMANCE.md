@@ -77,15 +77,22 @@ fn main() {
 
 When running SurrealDB as an embedded database within Rust, default options of Tauri can make SurrealDB run slower, as it processes and outputs the database information logs. Configuring Tauri correctly, can result in much improved performance with the core database engine and any queries which are run on SurrealDB.
 
-When building a desktop application with Tauri, ensure that the Tauri plugin log is disabled by:
+When building a desktop application with Tauri, ensure that the Tauri plugin log is disabled by configuring the `tauri.conf.json` file:
 
-```toml
-[profile.release]
-lto = true
-strip = true
-opt-level = 3
-panic = 'abort'
-codegen-units = 1
+```json
+{
+  "plugins": {
+    "logger": {
+      "enabled": false
+    }
+  }
+}
+```
+
+Alternatively you can disable logs at compile time when building your Tauri app:
+
+```bash
+TAURI_LOG_LEVEL=off cargo tauri build
 ```
 
 ### Running SurrealDB in the browser using WebAssembly
