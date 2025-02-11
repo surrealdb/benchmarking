@@ -32,8 +32,10 @@ parses the SurrealQL queries, processes the primary desgn choices of SurrealDB i
 When starting the SurrealDB server, it is important to run the server using the correct configuration options and
 settings. For production environments or for performance benchmarking, the `--log` command-line argument or the
 `SURREAL_LOG` environment variable should be set to `error`, `warn`, or `info` (the default option when not specified).
-Other log verbosity levels (such as `debug`, `trace`, or `full`) are only for use in debugging, testing, or development
-scenarios.
+
+> [!NOTE] Other log verbosity levels (such as `debug`, `trace`, or `full`) are only for use in debugging, testing, or
+> development scenarios. The verbosity of the log level impacts the performance by increasing the amount of information
+> being logged for each single operation.
 
 When starting up the SurrealDB binary ensure that the `--log` argument is omitted, or specifically set to the correct
 log verbosity level. Additionally, ensure that the `rocksdb` storage engine is used to store data.
@@ -226,6 +228,30 @@ SELECT id
 FROM user
 WHERE age < 18);
 ```
+
+### `AND` index strategy explained
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eget lorem mauris. Curabitur auctor tincidunt ex et
+lacinia. Sed et turpis viverra, porttitor dui a, varius dui. Morbi vel ex sed libero aliquam bibendum sed non magna.
+Nullam et sem et felis ornare accumsan vel a ipsum. Aenean hendrerit id elit congue consequat. Proin dignissim magna in
+sem cursus, eget varius erat suscipit. Phasellus quis ultricies lorem. Pellentesque et semper augue, eu gravida risus.
+Aenean hendrerit mauris vitae lectus efficitur dictum. Nullam vitae eros sed nisi euismod tempor eu nec nibh.
+
+### `OR` index strategy explained
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eget lorem mauris. Curabitur auctor tincidunt ex et
+lacinia. Sed et turpis viverra, porttitor dui a, varius dui. Morbi vel ex sed libero aliquam bibendum sed non magna.
+Nullam et sem et felis ornare accumsan vel a ipsum. Aenean hendrerit id elit congue consequat. Proin dignissim magna in
+sem cursus, eget varius erat suscipit. Phasellus quis ultricies lorem. Pellentesque et semper augue, eu gravida risus.
+Aenean hendrerit mauris vitae lectus efficitur dictum. Nullam vitae eros sed nisi euismod tempor eu nec nibh.
+
+### Index lookup on remote fields
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eget lorem mauris. Curabitur auctor tincidunt ex et
+lacinia. Sed et turpis viverra, porttitor dui a, varius dui. Morbi vel ex sed libero aliquam bibendum sed non magna.
+Nullam et sem et felis ornare accumsan vel a ipsum. Aenean hendrerit id elit congue consequat. Proin dignissim magna in
+sem cursus, eget varius erat suscipit. Phasellus quis ultricies lorem. Pellentesque et semper augue, eu gravida risus.
+Aenean hendrerit mauris vitae lectus efficitur dictum. Nullam vitae eros sed nisi euismod tempor eu nec nibh.
 
 Supported index types:
 
