@@ -257,10 +257,10 @@ Operator support in queries:
 - [x] Support for using multiple indexes when using `OR` in queries
 - [x] Support for index lookup on remote fields
 
-Index support on ordering
+Index support for ordering
 
-- [x] Index based ascending order
-- [ ] Index based descending order
+- [x] Index-based ascending order
+- [ ] Index-based descending order
 
 <br>
 
