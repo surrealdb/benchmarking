@@ -147,6 +147,9 @@ SurrealDB has native built-in support for a number of different index types, wit
 
 Currently no indexes are used when performing `UPDATE` or `DELETE` queries on large table, even where indexes are defined. This functionality will be available in a future release. In the meantime, you can improve the performance of `UPDATE` and `DELETE` statements by combining these with a `SELECT` statement:
 
+> [!NOTE]
+> We'll be adding support for indexes within `UPDATE`, `UPSERT`, and `DELETE` statements in SurrealDB release `v2.3.0`.
+
 To improve the performance of an `UPDATE` statement, use a `SELECT` statement within a subquery, selecting only the `id` field. This will use any defined indexes:
 
 ```sql
