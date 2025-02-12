@@ -362,13 +362,89 @@ WHERE age < 7
 
 ### Index lookup on remote fields
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eget lorem mauris. Curabitur auctor tincidunt ex et
-lacinia. Sed et turpis viverra, porttitor dui a, varius dui. Morbi vel ex sed libero aliquam bibendum sed non magna.
-Nullam et sem et felis ornare accumsan vel a ipsum. Aenean hendrerit id elit congue consequat. Proin dignissim magna in
-sem cursus, eget varius erat suscipit. Phasellus quis ultricies lorem. Pellentesque et semper augue, eu gravida risus.
-Aenean hendrerit mauris vitae lectus efficitur dictum. Nullam vitae eros sed nisi euismod tempor eu nec nibh.
+SurrealDB document record IDs store both the table name and the record identifier. This design provides a
+straightforward and consistent way to reference records across the database. One particularly powerful feature is the
+ability to filter a table based on conditions that relate to a referenced table.
 
-Supported index types:
+Here is a concrete example, where the statement `SELECT * FROM access WHERE user.role = 'admin'` will retrieve records
+from the `access` table for which the referenced record in the `user` table has the `name` field set to 'admin'.
+
+Consider the following example:
+
+```sql
+DEFINE
+FIELD user ON TABLE access TYPE record<user>;
+CREATE
+user:1 SET name = 'foo', role = 'admin';
+CREATE
+user:2 SET name = 'bar', role = 'admin';
+CREATE
+access:A SET user = user:1;
+CREATE
+access:B SET user = user:2;
+SELECT *
+FROM access
+WHERE user.role = 'admin'
+```
+
+The query retrieves records from the `access` table whose associated record in the `user` table has the role `field` set
+to 'admin'.
+
+```js
+[
+	{
+		id: access:A,
+		user: user:1
+	},
+	{
+		id: access:B,
+		user: user:2
+	}
+]
+```
+
+To optimize this query, you can create indexes on both the `user.role` field and the `access.user` field.
+With these indexes, the query planner can leverage an index-based join strategy:
+
+```sql
+DEFINE
+INDEX idx_user_role ON TABLE user COLUMNS role;
+DEFINE
+INDEX idx_access_user ON TABLE access COLUMNS user;
+SELECT *
+FROM access
+WHERE user.role = 'admin' EXPLAIN;
+```
+
+```js
+[
+	{
+		detail: {
+			plan: {
+				index: 'idx_access_user',
+				joins: [
+					{
+						index: 'idx_user_role',
+						operator: '=',
+						value: 'admin'
+					}
+				],
+				operator: 'join'
+			},
+			table: 'access'
+		},
+		operation: 'Iterate Index'
+	},
+	{
+		detail: {
+			type: 'Memory'
+		},
+		operation: 'Collector'
+	}
+]
+```
+
+### Supported index types:
 
 - [x] Traditional indexes
 - [x] Unique indexes
