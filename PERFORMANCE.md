@@ -229,21 +229,136 @@ FROM user
 WHERE age < 18);
 ```
 
-### `AND` index strategy explained
+### Index strategies explained
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eget lorem mauris. Curabitur auctor tincidunt ex et
-lacinia. Sed et turpis viverra, porttitor dui a, varius dui. Morbi vel ex sed libero aliquam bibendum sed non magna.
-Nullam et sem et felis ornare accumsan vel a ipsum. Aenean hendrerit id elit congue consequat. Proin dignissim magna in
-sem cursus, eget varius erat suscipit. Phasellus quis ultricies lorem. Pellentesque et semper augue, eu gravida risus.
-Aenean hendrerit mauris vitae lectus efficitur dictum. Nullam vitae eros sed nisi euismod tempor eu nec nibh.
+When using `SELECT`, SurrealDB uses a query planner whose role is to identify if it can use the index to speed the
+execution of the query.
 
-### `OR` index strategy explained
+Without indexes, SurrealDB will operate a `SELECT` query on a table by using the table iterator. It mainly scans every
+record of a given table. If there is a condition (`WHERE ...`), an ordering (`ORDER BY ...`), or an aggregation (`GROUP
+BY ...`), it will load the value in memory and execute the operation. This process is commonly called a "table full
+scan".
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eget lorem mauris. Curabitur auctor tincidunt ex et
-lacinia. Sed et turpis viverra, porttitor dui a, varius dui. Morbi vel ex sed libero aliquam bibendum sed non magna.
-Nullam et sem et felis ornare accumsan vel a ipsum. Aenean hendrerit id elit congue consequat. Proin dignissim magna in
-sem cursus, eget varius erat suscipit. Phasellus quis ultricies lorem. Pellentesque et semper augue, eu gravida risus.
-Aenean hendrerit mauris vitae lectus efficitur dictum. Nullam vitae eros sed nisi euismod tempor eu nec nibh.
+```sql
+SELECT *
+FROM user
+WHERE age < 18 EXPLAIN;
+```
+
+```js
+[
+	{
+		detail: {
+			table: 'user'
+		},
+		operation: 'Iterate Table'
+	},
+	{
+		detail: {
+			type: 'Memory'
+		},
+		operation: 'Collector'
+	}
+]
+```
+
+Under certain conditions, if an index exists, and the condition or ordering involves exclusively fields that are
+indexed, the query planner will suggest an execution plan that involves one or multiple indexes to achieve these
+potential optimisations:
+
+- Only collect records that match the condition(s), as opposed to performing a table full scan.
+- As the index already stores the records in order, the scanning collects the records pre-ordered, sparing an additional
+  ordering phase.
+
+```sql
+DEFINE
+INDEX idx_user_age ON user FIELDS age;
+SELECT age
+FROM user
+WHERE age > 18 EXPLAIN;
+```
+
+```js
+[
+	{
+		detail: {
+			plan: {
+				from: {
+					inclusive: false,
+					value: 18
+				},
+				index: 'idx_user_age',
+				to: {
+					inclusive: false,
+					value: NONE
+				}
+			},
+			table: 'user'
+		},
+		operation: 'Iterate Index'
+	},
+	{
+		detail: {
+			type: 'Memory'
+		},
+		operation: 'Collector'
+	}
+]
+```
+
+If there are several clauses separated with 'OR' operators, the query planner may do several index-based iterations:
+
+```sql
+SELECT age
+FROM user
+WHERE age < 7
+   OR age > 77 EXPLAIN;
+```
+
+```js
+[
+	{
+		detail: {
+			plan: {
+				from: {
+					inclusive: false,
+					value: NONE
+				},
+				index: 'idx_user_age',
+				to: {
+					inclusive: false,
+					value: 7
+				}
+			},
+			table: 'user'
+		},
+		operation: 'Iterate Index'
+	},
+	{
+		detail: {
+			plan: {
+				from: {
+					inclusive: false,
+					value: 77
+				},
+				index: 'idx_user_age',
+				to: {
+					inclusive: false,
+					value: NONE
+				}
+			},
+			table: 'user'
+		},
+		operation: 'Iterate Index'
+	},
+	{
+		detail: {
+			type: 'Memory'
+		},
+		operation: 'Collector'
+	}
+]
+```
 
 ### Index lookup on remote fields
 
