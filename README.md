@@ -46,6 +46,8 @@ This repository exists as a central repository for a collection of benchmarking 
 
 As we add support for additional benchmarking suites, we will add and link to them in this repository.
 
+For SurrealDB performance best practices, [see our documentation](https://surrealdb.com/docs/surrealdb/reference-guide/performance-best-practices).
+
 ## [crud-bench](https://github.com/surrealdb/crud-bench)
 
 The crud-bench benchmarking tool is an open-source benchmarking tool for testing and comparing the performance of a number of different workloads on embedded, networked, and remote databases. It can be used to compare both SQL and NoSQL platforms including key-value, and embedded databases. Importantly crud-bench focuses on testing additional features which are not present in other benchmarking tools, but which are available in SurrealDB.
